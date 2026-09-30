@@ -1,3 +1,8 @@
+from collections import Counter
+import html
+import io
+import re
+
 import pandas as pd
 import streamlit as st
 
@@ -177,39 +182,112 @@ with st.container():
 
 st.markdown('<div class="section-header">02. 데이터 전처리와 시각화</div>', unsafe_allow_html=True)
 
-pre_left, pre_right = st.columns([1.4, 0.6])
-with pre_left:
-    st.markdown("### 데이터 전처리")
-    uploaded = st.file_uploader("CSV 파일을 업로드해 보세요", type=["csv"], accept_multiple_files=False)
-    if uploaded is not None:
-        raw = pd.read_csv(uploaded)
-    else:
-        raw = load_gdp_data().head(20)
+st.markdown("### 데이터 전처리")
+uploaded = st.file_uploader("CSV 파일을 업로드해 보세요", type=["csv"], accept_multiple_files=False)
+if uploaded is not None:
+    raw = pd.read_csv(uploaded)
+else:
+    raw = load_gdp_data().head(20)
 
-    selected_cols = st.multiselect("기준이 되는 열을 선택하세요", raw.columns.tolist(), default=list(raw.columns[:5]))
-    cleaned = raw[selected_cols].copy()
-    cleaned = cleaned.dropna(subset=selected_cols)
-    st.dataframe(cleaned.head(10), use_container_width=True)
-    st.write(f"전처리 후 행 수: {len(cleaned)}")
-    st.bar_chart(cleaned.isnull().sum())
+selected_cols = st.multiselect("기준이 되는 열을 선택하세요", raw.columns.tolist(), default=list(raw.columns[:5]))
+cleaned = raw[selected_cols].copy()
+cleaned = cleaned.dropna(subset=selected_cols)
+st.dataframe(cleaned.head(10), use_container_width=True)
+st.write(f"전처리 후 행 수: {len(cleaned)}")
+st.bar_chart(cleaned.isnull().sum())
 
-with pre_right:
-    st.markdown("### 시각화 도구")
-    vis_type = st.selectbox("그래프 유형", ["꺾은선형", "막대형", "산점도"])
-    chart_data = pd.DataFrame({
-        "범주": ["수집", "정제", "정리", "시각화"],
-        "값": [40, 75, 88, 96],
+st.markdown("### 데이터 시각화")
+vis_type = st.selectbox("그래프 유형", ["꺾은선형", "막대형", "산점도"])
+chart_data = pd.DataFrame({
+    "범주": ["수집", "정제", "정리", "시각화"],
+    "값": [40, 75, 88, 96],
+})
+if vis_type == "꺾은선형":
+    st.line_chart(chart_data.set_index("범주")["값"])
+elif vis_type == "막대형":
+    st.bar_chart(chart_data.set_index("범주")["값"])
+else:
+    scatter_df = pd.DataFrame({
+        "x": [1, 2, 3, 4, 5, 6],
+        "y": [5, 6, 8, 7, 9, 12],
     })
-    if vis_type == "꺾은선형":
-        st.line_chart(chart_data.set_index("범주")["값"])
-    elif vis_type == "막대형":
-        st.bar_chart(chart_data.set_index("범주")["값"])
+    st.scatter_chart(scatter_df, x="x", y="y")
+
+st.markdown("### 워드클라우드 실습")
+with st.form("wordcloud_form"):
+    input_text = st.text_area(
+        "분석할 텍스트를 입력하세요",
+        value="데이터 분석은 데이터를 수집하고 정리하여 의미 있는 정보를 찾는 과정입니다. "
+        "데이터 시각화는 복잡한 데이터를 쉽게 이해하도록 도와줍니다. "
+        "좋은 분석은 정확한 데이터와 적절한 질문에서 시작합니다.",
+        height=120,
+    )
+    start_analysis = st.form_submit_button("시작", type="primary")
+
+if start_analysis:
+    st.session_state["wordcloud_input_text"] = input_text
+
+uploaded_file = st.file_uploader(
+    "텍스트 파일 또는 CSV 파일을 첨부하면 자동으로 분석합니다",
+    type=["txt", "md", "csv"],
+    key="wordcloud_file",
+)
+
+analysis_text = st.session_state.get("wordcloud_input_text")
+if uploaded_file is not None:
+    file_bytes = uploaded_file.getvalue()
+    file_text = None
+    for encoding in ("utf-8-sig", "cp949"):
+        try:
+            file_text = file_bytes.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+
+    if file_text is None:
+        st.error("파일 인코딩을 읽을 수 없습니다. UTF-8 또는 CP949 파일을 사용해 주세요.")
+        analysis_text = None
+    elif uploaded_file.name.lower().endswith(".csv"):
+        try:
+            csv_data = pd.read_csv(io.StringIO(file_text), header=None, dtype=str, keep_default_na=False)
+            analysis_text = " ".join(csv_data.values.flatten().tolist())
+            st.success(f"{uploaded_file.name} 파일 분석 완료")
+        except (pd.errors.ParserError, pd.errors.EmptyDataError):
+            st.error("CSV 파일 형식을 확인해 주세요.")
+            analysis_text = None
     else:
-        scatter_df = pd.DataFrame({
-            "x": [1, 2, 3, 4, 5, 6],
-            "y": [5, 6, 8, 7, 9, 12],
-        })
-        st.scatter_chart(scatter_df, x="x", y="y")
+        analysis_text = file_text
+        st.success(f"{uploaded_file.name} 파일 분석 완료")
+
+if analysis_text is None:
+    st.info("텍스트를 입력하고 시작을 누르거나 파일을 첨부해 주세요.")
+else:
+    words = re.findall(r"[가-힣A-Za-z0-9]+", analysis_text)
+    word_counts = Counter(word for word in words if len(word) > 1)
+
+if analysis_text is not None and word_counts:
+    max_count = max(word_counts.values())
+    cloud_colors = ["#1d4d3b", "#327a66", "#4f8290", "#b66b3d", "#6a7e45"]
+    cloud_words = []
+    for index, (word, count) in enumerate(word_counts.most_common(60)):
+        font_size = 18 + (count - 1) / max(max_count - 1, 1) * 34
+        cloud_words.append(
+            f'<span style="font-size:{font_size:.0f}px;color:{cloud_colors[index % len(cloud_colors)]};'
+            f'font-weight:{700 if count == max_count else 500};padding:5px 9px">'
+            f'{html.escape(word)}<small style="font-size:12px;padding-left:4px">{count}</small></span>'
+        )
+    st.markdown(
+        '<div style="min-height:240px;display:flex;flex-wrap:wrap;align-items:center;'
+        'justify-content:center;align-content:center;gap:5px 8px;padding:24px 12px;'
+        'background:rgba(141,179,107,0.08);border-radius:8px">'
+        + "".join(cloud_words)
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+    frequency_df = pd.DataFrame(word_counts.most_common(10), columns=["단어", "빈도"])
+    st.dataframe(frequency_df, hide_index=True, use_container_width=True)
+elif analysis_text is not None:
+    st.info("두 글자 이상의 단어를 입력하면 워드클라우드가 표시됩니다.")
 
 st.markdown('<div class="section-header">03. 데이터 분석 방법</div>', unsafe_allow_html=True)
 

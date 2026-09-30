@@ -112,7 +112,7 @@ def render_hero(kicker, title, description):
 
 if page == "교사 소개":
     render_hero(
-        "JAUN HIGH SCHOOL / INFORMATICS",
+        "JAWOON HIGH SCHOOL AI교실 HanLAB/ INFORMATICS",
         "질문에서 시작해,<br>데이터로 답을 찾습니다.",
         "안녕하세요. 자운고등학교에서 정보, 인공지능 기초, 데이터과학을 가르칩니다. "
         "직접 만들고 실험하며 디지털 세상을 주도적으로 읽는 힘을 함께 기릅니다.",

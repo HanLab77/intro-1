@@ -6,8 +6,11 @@ import uuid
 
 import streamlit as st
 
+from menu_style import apply_menu_style
+
 
 st.set_page_config(page_title="자유게시판 | 자운고 정보교실", page_icon="📌", layout="wide")
+apply_menu_style()
 
 DATA_FILE = Path(__file__).resolve().parents[1] / "data" / "freeboard_posts.json"
 ADMIN_NUMBER = "1234"

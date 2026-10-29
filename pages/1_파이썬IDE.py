@@ -6,12 +6,15 @@ import sys
 
 import streamlit as st
 
+from menu_style import apply_menu_style
+
 
 st.set_page_config(
 	page_title="Python 코드 실험실",
 	page_icon="⌘",
 	layout="wide",
 )
+apply_menu_style()
 
 st.markdown(
 	"""

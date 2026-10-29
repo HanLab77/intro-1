@@ -1,12 +1,15 @@
 import pandas as pd
 import streamlit as st
 
+from menu_style import apply_menu_style
+
 st.set_page_config(
     page_title="자운고등학교 정보교사",
     page_icon="🧭",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+apply_menu_style()
 
 st.markdown(
     """
@@ -44,8 +47,6 @@ st.markdown(
     .note-box { border-left: 3px solid #95b55a; padding: .25rem 0 .25rem 1rem; color: var(--muted); line-height: 1.8; }
     .stMetric { background: #fff; border: 1px solid var(--line); padding: 1rem 1.1rem; border-radius: 6px; }
     .stMetric label { color: var(--muted) !important; }
-    .stTabs [data-baseweb="tab-list"] { gap: 1.25rem; }
-    .stTabs [data-baseweb="tab"] { height: 3rem; }
     div[data-testid="stForm"] { border-color: var(--line); background: #fff; }
     .course-kicker { color: var(--forest); font: 500 .72rem 'DM Mono', monospace; }
     @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

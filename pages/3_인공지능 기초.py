@@ -13,8 +13,11 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, export_graphviz
 
+from menu_style import apply_menu_style
+
 
 st.set_page_config(page_title="인공지능 기초 실험실", page_icon="🧠", layout="wide")
+apply_menu_style()
 
 st.markdown(
 	"""

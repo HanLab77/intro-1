@@ -15,6 +15,10 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from menu_style import apply_menu_style
+
+apply_menu_style()
+
 st.title("📊 데이터 분석 교과서 실험실")
 st.caption("고등학교 데이터 분석 교과서 목차를 바탕으로 한 동적 탐구 웹페이지")
 
@@ -53,7 +57,7 @@ st.markdown(
         color: #4a6b3a;
         font-weight: 700;
     }
-    /* 상단 메뉴(단계 탭)만 꾸민다. 단계 안쪽의 작은 탭은 기본 모양 그대로 둔다. */
+    /* 상단 메뉴(단계 탭)만 따로 꾸민다. 단계 안쪽의 탭은 menu_style.py의 세부 메뉴 모양을 따른다. */
     .st-key-step_menu [role="tablist"]:not([data-testid="stTabPanel"] [role="tablist"]) {
         gap: 0.5rem;
         flex-wrap: wrap;

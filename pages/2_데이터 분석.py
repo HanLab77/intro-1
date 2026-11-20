@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.parse
+from pathlib import Path
 
 import altair as alt
 import numpy as np
@@ -235,44 +236,6 @@ def column_profile(df):
 def fld(col):
     # Altair는 필드 이름의 . [ ] 를 경로로 해석하므로 이스케이프한다.
     return str(col).replace(".", "\\.").replace("[", "\\[").replace("]", "\\]")
-
-
-def compute_regression(df):
-    x = df["학습시간"]
-    y = df["시험점수"]
-    x_mean = x.mean()
-    y_mean = y.mean()
-    slope = ((x - x_mean) * (y - y_mean)).sum() / ((x - x_mean) ** 2).sum()
-    intercept = y_mean - slope * x_mean
-    return slope, intercept
-
-
-def kmeans(points, k, max_iter=10):
-    centers = [points[i] for i in range(k)]
-    for _ in range(max_iter):
-        groups = [[] for _ in range(k)]
-        for idx, point in enumerate(points):
-            dists = [((point[0] - c[0]) ** 2 + (point[1] - c[1]) ** 2) ** 0.5 for c in centers]
-            cluster_id = min(range(len(dists)), key=dists.__getitem__)
-            groups[cluster_id].append(idx)
-
-        new_centers = []
-        for group in groups:
-            if not group:
-                new_centers.append(centers[len(new_centers)])
-                continue
-            xs = [points[i][0] for i in group]
-            ys = [points[i][1] for i in group]
-            new_centers.append((sum(xs) / len(xs), sum(ys) / len(ys)))
-        if new_centers == centers:
-            break
-        centers = new_centers
-
-    labels = []
-    for point in points:
-        dists = [((point[0] - c[0]) ** 2 + (point[1] - c[1]) ** 2) ** 0.5 for c in centers]
-        labels.append(min(range(len(dists)), key=dists.__getitem__))
-    return labels
 
 
 # 데이터 수집하기(4-1차시) 자료에 소개된 공개 데이터 제공 사이트
@@ -1260,61 +1223,16 @@ with eda_tab:
         )
 
 with reg_tab:
-    step_header("회귀 분석", "학습 시간과 성적의 관계를 통해 예측 모델을 이해합니다.")
-    study_df = pd.DataFrame({
-        "학습시간": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "시험점수": [42, 50, 58, 61, 67, 74, 81, 86, 92, 98],
-    })
-    slope, intercept = compute_regression(study_df)
-    time_value = st.slider("학습시간 입력", min_value=1, max_value=12, value=6)
-    pred_score = intercept + slope * time_value
-    st.metric("회귀식", f"점수 = {intercept:.2f} + {slope:.2f} × 학습시간")
-    st.metric("예측 점수", f"{pred_score:.1f}점")
-    st.line_chart(study_df.set_index("학습시간")["시험점수"])
+    step_header("회귀 분석", "점을 움직이며 최소제곱법으로 회귀직선의 기울기가 어떻게 정해지는지 확인합니다.")
+    st.iframe(Path("data/regression_line.html"), height=2200)
 
 with cluster_tab:
-    step_header("군집 분석", "거리를 기준으로 비슷한 데이터끼리 묶어 봅니다.")
-    k_value = st.slider("군집 수 k", min_value=2, max_value=5, value=3)
-    points = [
-        (1.0, 2.0), (1.3, 2.1), (2.2, 3.0), (5.5, 6.0),
-        (5.8, 5.9), (6.2, 6.3), (10.0, 9.5), (9.8, 10.2),
-        (10.4, 9.8), (11.0, 11.0)
-    ]
-    cluster_labels = kmeans(points, k_value)
-    cluster_df = pd.DataFrame({"x": [p[0] for p in points], "y": [p[1] for p in points], "군집": cluster_labels})
-    st.scatter_chart(cluster_df, x="x", y="y")
-    st.dataframe(cluster_df, width="stretch")
-    st.write("k-평균 군집 분석은 거리를 기준으로 비슷한 데이터끼리 묶는 방법입니다.")
+    step_header("군집 분석", "중심점을 직접 놓고 움직이며 k-평균 군집화로 비슷한 데이터끼리 묶어 봅니다.")
+    st.iframe(Path("data/cluster_lab.html"))
 
 with assoc_tab:
-    step_header("연관 분석", "함께 구매되는 상품의 규칙을 지지도와 신뢰도로 찾아봅니다.")
-    basket_df = pd.DataFrame({
-        "거래ID": [1, 2, 3, 4, 5, 6],
-        "구매목록": [
-            "우유, 빵, 시리얼",
-            "우유, 바나나",
-            "빵, 우유, 요구르트",
-            "시리얼, 바나나",
-            "우유, 시리얼, 빵",
-            "빵, 요구르트",
-        ],
-    })
-    item_a = st.selectbox("조건 아이템", ["우유", "빵", "시리얼", "바나나", "요구르트"])
-    item_b = st.selectbox("결과 아이템", ["빵", "우유", "시리얼", "바나나", "요구르트"])
-
-    transactions = [row["구매목록"].split(", ") for _, row in basket_df.iterrows()]
-    total = len(transactions)
-    a_count = sum(1 for items in transactions if item_a in items)
-    ab_count = sum(1 for items in transactions if item_a in items and item_b in items)
-    support = ab_count / total if total else 0
-    confidence = ab_count / a_count if a_count else 0
-
-    result_df = pd.DataFrame([
-        {"조건": item_a, "결과": item_b, "지지도": round(support, 3), "신뢰도": round(confidence, 3)},
-    ])
-    st.table(result_df)
-    st.write("- 지지도: 전체 거래 중 조건과 결과가 함께 발생하는 비율")
-    st.write("- 신뢰도: 조건이 발생했을 때 결과가 발생할 확률")
+    step_header("연관 분석", "장바구니 데이터로 함께 구매되는 상품의 규칙을 지지도·신뢰도·향상도로 찾아봅니다.")
+    st.iframe(Path("data/association_lab.html"))
 
 with code_tab:
     step_header("💻 코드 실습", "주피터 노트북처럼 CSV 파일을 업로드하고, 파이썬 코드를 셀에 입력해 실행 결과를 바로 확인합니다.")
@@ -1371,19 +1289,3 @@ with code_tab:
             f"실행 시간은 {NOTEBOOK_TIMEOUT}초로 제한되며 pandas·numpy·matplotlib 등 데이터 분석 모듈만 import할 수 있습니다. "
             "마지막 줄의 값(예: data.describe())은 표로 표시됩니다."
         )
-
-st.markdown("---")
-st.subheader("📘 교과서 목차 정리")
-for section_name, items in TEXTBOOK_CHAPTERS.items():
-    with st.expander(section_name, expanded=True):
-        for item in items:
-            st.markdown(f"- {item}")
-
-st.download_button(
-    label="교과서 목차 다운로드",
-    data=pd.DataFrame(
-        [{"단원": section_name, "내용": item} for section_name, items in TEXTBOOK_CHAPTERS.items() for item in items]
-    ).to_csv(index=False, encoding="utf-8-sig"),
-    file_name="data_analysis_textbook_outline.csv",
-    mime="text/csv",
-)

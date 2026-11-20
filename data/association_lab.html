@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>연관 분석 실험실</title>
+<style>
+:root{--navy:#123b70;--blue:#1769c2;--ink:#17263c;--muted:#64748b;--line:#d9e3ef;--a:#2e86de;--b:#f08c2e;--ab:#8e44ad}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f7fc;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;line-height:1.6}
+header{background:linear-gradient(120deg,#103c78,#1674c9);color:white;padding:24px 18px}
+.wrap{max-width:1180px;margin:auto;padding:0 16px}
+h1{font-size:clamp(24px,4vw,34px);margin:0 0 5px}
+header p,.banner p{margin:0;color:#e5f2ff}
+main{padding:22px 0 42px}
+.banner{background:linear-gradient(120deg,#103c78,#1674c9);color:white;padding:22px 18px;margin:32px 0 18px;border-radius:16px}
+.banner:first-child{margin-top:0}
+.banner h1{font-size:clamp(21px,3.2vw,28px)}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{border:0;border-radius:9px;background:var(--blue);color:white;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}
+button:hover{filter:brightness(.96)}
+button.secondary{background:#eaf2fc;color:#174c88}
+button.jump{background:white;color:#123b70;border-radius:999px;padding:7px 14px;font-size:14px;box-shadow:0 3px 10px #0a254a33}
+button.jump:hover{background:#eaf4ff;filter:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 18px #193e6810}
+.card h2{font-size:19px;margin:0 0 12px;color:var(--navy)}
+.card h3{font-size:16px;margin:16px 0 8px}
+.lead{font-size:15px;color:#40536b;margin:0 0 12px}
+mark{background:#fff1c7;color:inherit;border-radius:4px;padding:0 2px}
+.small{font-size:13px;color:var(--muted)}
+.callout{background:#eaf8f1;border:1px solid #bce7d0;padding:12px;border-radius:12px;color:#185c42}
+.story{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.bubble{background:#f5f9ff;border-radius:14px;padding:10px 12px;font-size:14px}
+.bubble b{display:block;color:var(--navy);margin-bottom:3px}
+.goals{margin:0;padding-left:20px;font-size:14px;color:#40536b}
+.case h2{display:flex;gap:8px;align-items:center}
+.minitable{font-size:13px}
+.minitable td:last-child{text-align:left}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #dce5ef;padding:6px 8px;text-align:center}
+th{background:#eef5fd;color:#24486f}
+.field{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px}
+.field label{font-weight:700;font-size:14px;display:grid;gap:4px}
+select{padding:8px;border:1px solid #cbd8e6;border-radius:8px;font:inherit;background:white;min-width:150px}
+.basket td.cell{cursor:pointer;user-select:none;font-size:18px;width:64px;transition:.15s}
+.basket td.cell:hover{background:#f0f6fd}
+.basket td.on{color:#1f2937}
+.basket td.off{color:#d4dde8}
+.basket td.colA.on{background:#dbeafb}
+.basket td.colB.on{background:#fde6cf}
+.basket th.colA{background:var(--a);color:white}
+.basket th.colB{background:var(--b);color:white}
+.basket tr.both th{background:#efe2f6;color:var(--ab)}
+.basket tr.both td.colA.on,.basket tr.both td.colB.on{background:#e6d2f2}
+.rule{font-size:22px;font-weight:800;text-align:center;margin:4px 0 10px}
+.rule .A{color:var(--a)}.rule .B{color:var(--b)}
+.boxes{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.box{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:white}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:#53657b}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.mcards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.mcard{border:1px solid #e4edf7;border-radius:12px;padding:12px;background:#fbfdff}
+.mcard h3{margin:0 0 4px;font-size:16px;color:var(--navy)}
+.mcard .q{font-size:13px;color:var(--muted);margin:0 0 6px}
+.mcard .f{background:#fff8e8;border:1px solid #f5d28b;border-radius:9px;padding:8px;text-align:center;font-size:14px}
+.mcard .v{font-size:26px;font-weight:800;color:var(--navy);text-align:center;margin-top:6px}
+.interp{background:#fff8e8;border:1px solid #f5d28b;border-radius:12px;padding:12px;margin-top:12px;font-size:15px}
+.liftscale{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;font-size:13px}
+.liftscale div{border-radius:10px;padding:8px;text-align:center}
+.sliders{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.sliders label{font-weight:700;font-size:14px;display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--blue)}
+#rules tr{cursor:pointer}
+#rules tr.ok{background:#f0fbf5}
+#rules tr.sel{outline:2px solid var(--ab);outline-offset:-2px}
+.buttonrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+details{border-bottom:1px dashed #cbd8e6;padding:8px 2px}
+summary{cursor:pointer;font-weight:600}
+.answer{margin:8px 0 0;background:#ffe9e9;color:#c62828;font-weight:700;border-radius:8px;padding:8px 10px;text-align:center}
+@media(max-width:900px){.grid,.grid3{grid-template-columns:1fr}.mcards{grid-template-columns:1fr}}
+@media(max-width:520px){.card{padding:14px}.story,.sliders,.liftscale{grid-template-columns:1fr}.basket td.cell{width:auto}}
+</style>
+</head>
+<body>
+<header id="top"><div class="wrap">
+<h1>연관 분석 실험실</h1>
+<p>장바구니를 직접 채워 보며 지지도, 신뢰도, 향상도로 "함께 사는 상품"의 규칙을 찾아보세요.</p>
+<nav class="jumps">
+<button class="jump" data-target="part2">1. 연관 분석 사례</button>
+<button class="jump" data-target="lab">2. 지지도·신뢰도·향상도 계산</button>
+<button class="jump" data-target="finder">3. 연관 규칙 찾기</button>
+<button class="jump" data-target="quiz">확인해 봅시다</button>
+</nav>
+</div></header>
+
+<main class="wrap">
+<div class="banner" id="part2">
+<h1>1. 연관 분석이 활용되는 사례</h1>
+<p>실생활에서 연관 분석이 적용된 사례는 무엇이 있을까요? 표를 보고 자주 함께 나오는 항목을 찾아보세요.</p>
+</div>
+<div class="grid3">
+<section class="card case">
+<h2>📚 사례 1. 마케팅</h2>
+<p class="small">고객의 구매 패턴을 연관 분석하여 함께 구매되는 제품을 추천하고, 관심사를 분석해 광고를 게재합니다.</p>
+<table class="minitable"><thead><tr><th>손님</th><th>구매 도서</th></tr></thead><tbody>
+<tr><td>1</td><td>요리책, 잡지, 토익</td></tr><tr><td>2</td><td>요리책, 잡지, 컬러링 북</td></tr><tr><td>3</td><td>잡지, 수학 참고서</td></tr><tr><td>4</td><td>요리책, 잡지</td></tr>
+</tbody></table>
+<p class="small">💡 요리책과 잡지를 묶어서 추천하면 매출이 오르겠다! → 「요리책 구매 시 잡지 10% 할인」</p>
+</section>
+<section class="card case">
+<h2>🔍 사례 2. 정보 검색</h2>
+<p class="small">웹 사이트의 방문 내역을 연관 분석하여 사용자가 관심 가질 만한 페이지를 추천합니다.</p>
+<table class="minitable"><thead><tr><th>IP</th><th>검색어 목록</th></tr></thead><tbody>
+<tr><td>1</td><td>무선 네트워크, 와이파이</td></tr><tr><td>2</td><td>와이파이, 블루투스</td></tr><tr><td>3</td><td>무선 네트워크, 블루투스</td></tr><tr><td>4</td><td>무선 네트워크, 블루투스, 와이파이</td></tr>
+</tbody></table>
+<p class="small">💡 "무선 네트워크"를 검색하면 연관 검색어도 같이 보여 준다.</p>
+</section>
+<section class="card case">
+<h2>🏥 사례 3. 의료</h2>
+<p class="small">병원에서는 많은 환자의 데이터를 연관 분석하여 다른 증상이나 질병을 찾을 수 있습니다.</p>
+<table class="minitable"><thead><tr><th></th><th>섭취한 약물과 음식</th></tr></thead><tbody>
+<tr><td>1</td><td>A약, 칼슘제, 우유</td></tr><tr><td>2</td><td>A약, 칼슘제, 김밥</td></tr><tr><td>3</td><td>A약, 칼슘제, 우유, 치킨</td></tr><tr><td>4</td><td>A약, 칼슘제, 복숭아</td></tr>
+</tbody></table>
+<p class="small">💡 이 약은 칼슘제와 함께 먹으면 약효가 떨어지는구나! → 「A약 처방에서 칼슘제를 빼 주세요.」</p>
+</section>
+</div>
+
+<div class="banner" id="lab">
+<h1>2. 지지도 · 신뢰도 · 향상도 계산하기</h1>
+<p>표의 칸을 눌러 장바구니에 상품을 넣고 빼 보세요. 규칙 A → B의 세 가지 지표가 바로 다시 계산됩니다.</p>
+</div>
+<div class="grid">
+<section class="card">
+<h2>① 거래 데이터 (장바구니)</h2>
+<div class="field">
+<label>데이터 선택<select id="dataset"></select></label>
+<label><span>조건 A <span style="color:var(--a)">■</span></span><select id="selA"></select></label>
+<label><span>결과 B <span style="color:var(--b)">■</span></span><select id="selB"></select></label>
+</div>
+<div style="overflow-x:auto"><table class="basket"><thead id="bHead"></thead><tbody id="bBody"></tbody></table></div>
+<div class="buttonrow">
+<button class="secondary" id="addRow">＋ 거래 추가</button>
+<button class="secondary" id="delRow">－ 마지막 거래 삭제</button>
+<button class="secondary" id="resetData">↺ 처음 데이터로</button>
+</div>
+<p class="small">✔ 칸을 누르면 구매/미구매가 바뀝니다. 보라색 행은 A와 B를 함께 산 거래입니다.</p>
+</section>
+<section class="card">
+<h2>② 규칙 분석</h2>
+<div class="rule"><span class="A" id="ruleA">우유</span> → <span class="B" id="ruleB">빵</span></div>
+<div class="boxes" id="boxes"></div>
+<div class="legend" id="boxLegend"></div>
+<div class="mcards">
+<div class="mcard"><h3>지지도</h3><p class="q">전체 거래 중 A와 B를 <b>함께</b> 산 비율</p><div class="f" id="fSup"></div><div class="v" id="vSup"></div></div>
+<div class="mcard"><h3>신뢰도</h3><p class="q">A를 산 거래 중 B도 산 비율</p><div class="f" id="fConf"></div><div class="v" id="vConf"></div></div>
+<div class="mcard"><h3>향상도</h3><p class="q">A를 사면 B를 살 확률이 평소의 몇 배가 되나</p><div class="f" id="fLift"></div><div class="v" id="vLift"></div></div>
+</div>
+<div class="interp" id="interp"></div>
+<div class="liftscale">
+<div style="background:#e7f6ee;color:#185c42"><b>향상도 &gt; 1</b><br>함께 사는 경향<br>(양의 연관)</div>
+<div style="background:#f1f4f8;color:#40536b"><b>향상도 = 1</b><br>서로 관계없음<br>(독립)</div>
+<div style="background:#fdeceb;color:#8b3027"><b>향상도 &lt; 1</b><br>함께 사지 않는 경향<br>(음의 연관)</div>
+</div>
+</section>
+</div>
+
+<div class="banner" id="finder">
+<h1>3. 연관 규칙 찾기</h1>
+<p>최소 지지도와 최소 신뢰도를 정해 의미 있는 규칙만 골라내 봅니다. 행을 누르면 위의 규칙 분석에 반영됩니다.</p>
+</div>
+<section class="card">
+<div class="sliders">
+<div><label for="minSup">최소 지지도 <output id="minSupVal">20%</output></label><input id="minSup" type="range" min="0" max="1" step=".05" value=".2"></div>
+<div><label for="minConf">최소 신뢰도 <output id="minConfVal">50%</output></label><input id="minConf" type="range" min="0" max="1" step=".05" value=".5"></div>
+</div>
+<div style="overflow-x:auto"><table>
+<thead><tr><th>규칙 (A → B)</th><th>함께 산 거래 수</th><th>지지도</th><th>신뢰도</th><th>향상도</th><th>판정</th></tr></thead>
+<tbody id="rules"></tbody>
+</table></div>
+<p class="small" id="rulesNote"></p>
+<div class="callout" style="margin-top:10px">💡 <b>A → B</b>와 <b>B → A</b>는 지지도와 향상도는 같지만 <b>신뢰도는 다를 수 있어요.</b> 표에서 두 규칙을 비교해 보세요.</div>
+</section>
+
+<div class="banner" id="quiz">
+<h1>확인해 봅시다!</h1>
+<p>먼저 스스로 답을 생각해 본 뒤 질문을 눌러 정답을 확인하세요.</p>
+</div>
+<section class="card">
+<details><summary>1. 장바구니 분석이란 무엇인가요?</summary><p class="answer">고객의 장바구니를 보고 어떤 물건들을 함께 구매하는지 연관성을 분석하는 것</p></details>
+<details><summary>2. 지지도는 무엇을 의미하나요?</summary><p class="answer">전체 거래 중 A와 B가 함께 나타나는 거래의 비율</p></details>
+<details><summary>3. 신뢰도는 무엇을 의미하나요?</summary><p class="answer">A가 있는 거래 중 B도 함께 있는 거래의 비율 (A를 샀을 때 B도 살 확률)</p></details>
+<details><summary>4. 향상도가 1보다 크다는 것은 무엇을 뜻하나요?</summary><p class="answer">A를 산 고객은 평소보다 B를 살 가능성이 높다 (A와 B는 양의 연관이 있다)</p></details>
+<details><summary>5. 실생활에서 연관 분석이 적용된 사례를 말해 보세요.</summary><p class="answer">상품 배치·묶음 할인, 함께 구매할 상품 추천, 연관 검색어, 함께 먹으면 안 되는 약물 발견 등</p></details>
+<div style="margin-top:12px"><button class="secondary" id="toggleAnswers">정답 모두 보기</button></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const SETS={
+ mart:{label:"🛒 마트 장바구니",items:["우유","빵","시리얼","바나나","잼","계란"],A:"우유",B:"빵",rows:[
+  ["우유","빵","계란"],["우유","빵"],["우유","빵","시리얼"],["빵","잼"],["시리얼","바나나"],
+  ["우유","빵","잼"],["시리얼","바나나"],["우유","빵","바나나"],["계란","시리얼"],["바나나","잼"]]},
+ book:{label:"📚 서점 (마케팅)",items:["요리책","잡지","토익","컬러링 북","수학 참고서"],A:"요리책",B:"잡지",rows:[
+  ["요리책","잡지","토익"],["요리책","잡지","컬러링 북"],["잡지","수학 참고서"],["요리책","잡지"],
+  ["토익","수학 참고서"],["요리책","잡지","컬러링 북"],["토익"],["잡지","컬러링 북"]]},
+ search:{label:"🔍 검색어 (정보 검색)",items:["무선 네트워크","와이파이","블루투스","핫스팟"],A:"무선 네트워크",B:"와이파이",rows:[
+  ["무선 네트워크","와이파이"],["와이파이","블루투스"],["무선 네트워크","블루투스"],["무선 네트워크","블루투스","와이파이"],
+  ["무선 네트워크","와이파이","핫스팟"],["와이파이","핫스팟"]]},
+ med:{label:"🏥 의료 (약물과 음식)",items:["A약","칼슘제","우유","김밥","치킨","복숭아"],A:"A약",B:"칼슘제",rows:[
+  ["A약","칼슘제","우유"],["A약","칼슘제","김밥"],["A약","칼슘제","우유","치킨"],["A약","칼슘제","복숭아"],
+  ["A약","김밥"],["우유","치킨"]]}
+};
+let key="mart",items=[],rows=[],A="",B="";
+
+// 받침 유무에 따라 조사를 고른다. 한글이 아니면 두 형태를 함께 쓴다.
+function josa(word,withF,withoutF){
+ const c=word.charCodeAt(word.length-1);
+ if(c<0xAC00||c>0xD7A3)return word+withF+"("+withoutF+")";
+ return word+((c-0xAC00)%28?withF:withoutF);
+}
+const pct=v=>Number.isFinite(v)?(v*100).toFixed(0)+"%":"—";
+const f2=v=>Number.isFinite(v)?v.toFixed(2):"—";
+
+function load(k){
+ key=k;const s=SETS[k];items=[...s.items];rows=s.rows.map(r=>new Set(r));A=s.A;B=s.B;fillSelects();render();
+}
+function fillSelects(){
+ $("selA").innerHTML=items.map(i=>`<option ${i===A?"selected":""}>${i}</option>`).join("");
+ $("selB").innerHTML=items.filter(i=>i!==A).map(i=>`<option ${i===B?"selected":""}>${i}</option>`).join("");
+ B=$("selB").value;
+}
+function counts(a,b){
+ const N=rows.length,nA=rows.filter(r=>r.has(a)).length,nB=rows.filter(r=>r.has(b)).length,nAB=rows.filter(r=>r.has(a)&&r.has(b)).length;
+ const sup=N?nAB/N:NaN,conf=nA?nAB/nA:NaN,pB=N?nB/N:NaN,lift=pB?conf/pB:NaN;
+ return{N,nA,nB,nAB,sup,conf,pB,lift};
+}
+function renderBasket(){
+ const cls=i=>i===A?"colA":i===B?"colB":"";
+ $("bHead").innerHTML=`<tr><th>거래</th>${items.map(i=>`<th class="${cls(i)}">${i}</th>`).join("")}</tr>`;
+ $("bBody").innerHTML=rows.map((r,ri)=>`<tr class="${r.has(A)&&r.has(B)?"both":""}"><th>${ri+1}</th>${items.map(i=>`<td class="cell ${cls(i)} ${r.has(i)?"on":"off"}" data-r="${ri}" data-i="${i}">${r.has(i)?"✔":"·"}</td>`).join("")}</tr>`).join("");
+ document.querySelectorAll("#bBody td.cell").forEach(td=>td.addEventListener("click",()=>{
+  const r=rows[+td.dataset.r],i=td.dataset.i;r.has(i)?r.delete(i):r.add(i);render();
+ }));
+}
+function renderRule(){
+ const c=counts(A,B);
+ $("ruleA").textContent=A;$("ruleB").textContent=B;
+ const color=r=>r.has(A)&&r.has(B)?"var(--ab)":r.has(A)?"var(--a)":r.has(B)?"var(--b)":"#d4dde8";
+ $("boxes").innerHTML=rows.map((r,i)=>`<div class="box" style="background:${color(r)}" title="거래 ${i+1}">${i+1}</div>`).join("");
+ const onlyA=c.nA-c.nAB,onlyB=c.nB-c.nAB;
+ $("boxLegend").innerHTML=`<span><i class="sw" style="background:var(--ab)"></i>A와 B 함께 ${c.nAB}건</span><span><i class="sw" style="background:var(--a)"></i>A만 ${onlyA}건</span><span><i class="sw" style="background:var(--b)"></i>B만 ${onlyB}건</span><span><i class="sw" style="background:#d4dde8"></i>둘 다 없음 ${c.N-c.nA-onlyB}건</span>`;
+ $("fSup").innerHTML=`(A와 B 함께 산 거래 수) ÷ (전체 거래 수)<br><b>${c.nAB} ÷ ${c.N}</b>`;
+ $("vSup").textContent=pct(c.sup);
+ $("fConf").innerHTML=`(A와 B 함께 산 거래 수) ÷ (A를 산 거래 수)<br><b>${c.nAB} ÷ ${c.nA}</b>`;
+ $("vConf").textContent=pct(c.conf);
+ $("fLift").innerHTML=`신뢰도 ÷ (B를 산 거래의 비율)<br><b>${f2(c.conf)} ÷ (${c.nB} ÷ ${c.N})</b>`;
+ $("vLift").textContent=f2(c.lift);
+ let msg;
+ if(!c.nA)msg=`${josa(A,"을","를")} 산 거래가 없어서 신뢰도와 향상도를 계산할 수 없어요.`;
+ else{
+  msg=`전체 거래의 <b>${pct(c.sup)}</b>에서 ${josa(A,"과","와")} ${josa(B,"이","가")} 함께 팔렸고, ${josa(A,"을","를")} 산 거래의 <b>${pct(c.conf)}</b>가 ${B}도 샀습니다. `;
+  msg+=`평소 ${josa(B,"을","를")} 사는 비율은 <b>${pct(c.pB)}</b>이므로 향상도는 <b>${f2(c.lift)}</b>입니다. → `;
+  msg+=c.lift>1.0001?`${josa(A,"을","를")} 사면 ${josa(B,"을","를")} 살 가능성이 평소보다 높아요. <b>함께 진열하거나 묶음 할인</b>을 해 볼 만해요!`
+   :c.lift<.9999?`${josa(A,"을","를")} 산 고객은 오히려 ${josa(B,"을","를")} 덜 사요. 함께 추천하는 효과는 기대하기 어려워요.`
+   :`${josa(A,"과","와")} ${B}의 구매는 서로 관계가 없어요(독립).`;
+ }
+ $("interp").innerHTML=msg;
+}
+function renderRules(){
+ const ms=Number($("minSup").value),mc=Number($("minConf").value);
+ $("minSupVal").textContent=pct(ms);$("minConfVal").textContent=pct(mc);
+ const list=[];
+ items.forEach(a=>items.forEach(b=>{if(a!==b){const c=counts(a,b);if(c.nAB>0)list.push({a,b,...c,ok:c.sup>=ms-1e-9&&c.conf>=mc-1e-9})}}));
+ list.sort((x,y)=>(y.ok-x.ok)||(y.lift-x.lift)||(y.conf-x.conf));
+ $("rules").innerHTML=list.length?list.map(r=>`<tr class="${r.ok?"ok":""} ${r.a===A&&r.b===B?"sel":""}" data-a="${r.a}" data-b="${r.b}">
+  <td><b style="color:var(--a)">${r.a}</b> → <b style="color:var(--b)">${r.b}</b></td><td>${r.nAB}</td><td>${pct(r.sup)}</td><td>${pct(r.conf)}</td>
+  <td style="color:${r.lift>1.0001?"#16845b":r.lift<.9999?"#c62828":"inherit"};font-weight:700">${f2(r.lift)}</td><td>${r.ok?"✅ 채택":"—"}</td></tr>`).join("")
+  :`<tr><td colspan="6" class="small">함께 구매된 상품이 없습니다.</td></tr>`;
+ const n=list.filter(r=>r.ok).length;
+ $("rulesNote").innerHTML=`조건을 만족하는 규칙: <b>${n}개</b> / 전체 ${list.length}개. 채택된 규칙 중 향상도가 1보다 큰 규칙이 실제로 활용할 만한 규칙입니다.`;
+ document.querySelectorAll("#rules tr[data-a]").forEach(tr=>tr.addEventListener("click",()=>{
+  A=tr.dataset.a;B=tr.dataset.b;fillSelects();$("selB").value=tr.dataset.b;B=tr.dataset.b;render();
+  $("lab").scrollIntoView({behavior:"smooth",block:"start"});
+ }));
+}
+function render(){renderBasket();renderRule();renderRules();}
+
+$("dataset").innerHTML=Object.entries(SETS).map(([k,s])=>`<option value="${k}">${s.label}</option>`).join("");
+$("dataset").addEventListener("change",e=>load(e.target.value));
+$("selA").addEventListener("change",e=>{A=e.target.value;if(B===A)B="";fillSelects();render();});
+$("selB").addEventListener("change",e=>{B=e.target.value;render();});
+$("addRow").addEventListener("click",()=>{rows.push(new Set());render();});
+$("delRow").addEventListener("click",()=>{if(rows.length>1){rows.pop();render();}});
+$("resetData").addEventListener("click",()=>load(key));
+$("minSup").addEventListener("input",renderRules);$("minConf").addEventListener("input",renderRules);
+document.querySelectorAll("button.jump").forEach(b=>b.addEventListener("click",()=>$(b.dataset.target).scrollIntoView({behavior:"smooth",block:"start"})));
+$("toggleAnswers").addEventListener("click",e=>{
+ const all=[...document.querySelectorAll("#quiz + .card details")],open=!all.every(d=>d.open);
+ all.forEach(d=>d.open=open);e.target.textContent=open?"정답 모두 숨기기":"정답 모두 보기";
+});
+load("mart");
+</script>
+</body>
+</html>

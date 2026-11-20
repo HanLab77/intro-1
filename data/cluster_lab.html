@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>k-평균 군집 분석 실험실</title>
+<style>
+:root{--navy:#123b70;--blue:#1769c2;--ink:#17263c;--muted:#64748b;--line:#d9e3ef}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f7fc;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;line-height:1.6}
+header{background:linear-gradient(120deg,#103c78,#1674c9);color:white;padding:24px 18px}
+.wrap{max-width:1180px;margin:auto;padding:0 16px}
+h1{font-size:clamp(24px,4vw,34px);margin:0 0 5px}
+header p,.banner p{margin:0;color:#e5f2ff}
+main{padding:22px 0 42px}
+.banner{background:linear-gradient(120deg,#103c78,#1674c9);color:white;padding:22px 18px;margin:32px 0 18px;border-radius:16px}
+.banner:first-child{margin-top:0}
+.banner h1{font-size:clamp(21px,3.2vw,28px)}
+.jumps{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{border:0;border-radius:9px;background:var(--blue);color:white;padding:9px 13px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+button:hover{filter:brightness(.96)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.secondary{background:#eaf2fc;color:#174c88}
+button.jump{background:white;color:#123b70;border-radius:999px;padding:7px 14px;font-size:14px;box-shadow:0 3px 10px #0a254a33}
+button.jump:hover{background:#eaf4ff;filter:none}
+button.primary{background:#c8374a}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.labgrid{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 18px #193e6810}
+.card h2{font-size:19px;margin:0 0 12px;color:var(--navy)}
+.card h3{font-size:16px;margin:16px 0 8px}
+.lead{font-size:15px;color:#40536b;margin:0 0 12px}
+mark{background:#fff1c7;color:inherit;border-radius:4px;padding:0 2px}
+.small{font-size:13px;color:var(--muted)}
+.term{background:#f5f9ff;border-left:4px solid #9cc7f4;border-radius:7px;padding:9px 12px;font-size:14px;margin:10px 0}
+.callout{background:#eaf8f1;border:1px solid #bce7d0;padding:12px;border-radius:12px;color:#185c42}
+.goals{margin:0;padding-left:20px;font-size:14px;color:#40536b}
+.cases{display:grid;gap:10px}
+.case{border:1px solid #e4edf7;border-radius:12px;padding:12px;background:#fbfdff}
+.case h3{margin:0 0 6px;font-size:16px;color:var(--navy)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
+.chip{background:#eef5fd;color:#24486f;border-radius:999px;padding:2px 9px;font-size:12.5px}
+.case p{margin:0;font-size:14px;color:#40536b}
+.keys{display:grid;gap:8px;margin:10px 0}
+.key{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;background:#f5f9ff;border-radius:10px;padding:9px 12px;font-size:14px}
+.key b{color:var(--navy);font-size:16px}
+.analogy{background:#fff8e8;border:1px solid #f5d28b;border-radius:12px;padding:12px;font-size:14px}
+.analogy ol{margin:6px 0 0;padding-left:20px}
+.flow{list-style:none;margin:0;padding:0;display:grid;gap:6px;position:relative}
+.flow li{background:#8cc8e3;color:#123b55;font-weight:700;text-align:center;border-radius:9px;padding:9px 10px;position:relative;transition:.2s}
+.flow li:not(:last-child)::after{content:"▼";position:absolute;left:50%;bottom:-15px;transform:translateX(-50%);color:#2f80c8;font-size:11px;z-index:1}
+.flow li{margin-bottom:6px}
+.flow li.active{background:#c8374a;color:white;box-shadow:0 0 0 3px #f5b7c0;transform:scale(1.03)}
+.flow li.passed{background:#cfe6f2;color:#5b7a8c}
+.loopnote{margin-top:4px;border:1.5px solid #2f80c8;border-radius:8px;padding:6px 10px;font-size:13px;text-align:center;color:#24486f;background:white}
+.flow.done li{background:#2bb673;color:white}
+.field{margin-bottom:14px}
+.field label{font-weight:700;font-size:14px;display:flex;justify-content:space-between}
+select{width:100%;padding:8px;border:1px solid #cbd8e6;border-radius:8px;font:inherit;margin-top:5px;background:white}
+input[type=range]{width:100%;accent-color:#c8374a;margin:8px 0 0}
+.modes{display:grid;gap:5px;margin-top:6px;font-size:14px}
+.modes label{font-weight:500;display:flex;gap:6px;align-items:center;cursor:pointer}
+.btncol{display:grid;gap:8px;margin:12px 0}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:#f5f9ff;border-radius:11px;padding:9px}
+.metric span{display:block;color:var(--muted);font-size:12px}
+.metric strong{font-size:21px;color:var(--navy)}
+.metric em{display:block;font-style:normal;font-size:11.5px;color:var(--muted)}
+.status{background:#fff8e8;border:1px solid #f5d28b;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:15px;min-height:48px}
+.status b{color:#b45309}
+.chartbox{background:#fbfdff;border:1px solid #e5edf6;border-radius:12px;padding:6px}
+svg{width:100%;height:auto;display:block}
+#plot{cursor:default}
+#plot.clickable{cursor:crosshair}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:#53657b;margin:8px 2px 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.steps4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.s4{border:1px solid #e4edf7;border-radius:10px;padding:9px;font-size:13px;color:#40536b;background:#fbfdff}
+.s4 b{display:block;color:var(--ink);font-size:14px}
+.s4.active{border-color:#c8374a;background:#fff4f5}
+.s4.active b{color:#c8374a}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #dce5ef;padding:7px 8px;text-align:center}
+th{background:#eef5fd;color:#24486f}
+.bar{height:12px;border-radius:6px;background:#9cc7f4;min-width:2px}
+.bar.sil{background:#2bb673}
+.bestrow{background:#f0fbf5}
+.formula{background:#fff8e8;border:1px solid #f5d28b;border-radius:12px;padding:10px;margin:8px 0;text-align:center;font-size:16px}
+details{border-bottom:1px dashed #cbd8e6;padding:8px 2px}
+summary{cursor:pointer;font-weight:600}
+.answer{margin:8px 0 0;background:#ffe9e9;color:#c62828;font-weight:700;border-radius:8px;padding:8px 10px;text-align:center}
+@media(max-width:900px){.grid,.labgrid{grid-template-columns:1fr}.steps4{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.card{padding:14px}.metric strong{font-size:17px}.key{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header id="top"><div class="wrap">
+<h1>k-평균 군집 분석 실험실</h1>
+<p>비슷한 데이터끼리 묶는 군집 분석을 이해하고, 중심점을 직접 놓고 움직이며 k-평균 군집화 과정을 단계별로 체험해 보세요.</p>
+<nav class="jumps">
+<button class="jump" data-target="part2">1. k-평균 군집 분석</button>
+<button class="jump" data-target="lab">2. 직접 해 보기</button>
+<button class="jump" data-target="part4">3. 좋은 군집과 k 정하기</button>
+<button class="jump" data-target="quiz">확인해 봅시다</button>
+</nav>
+</div></header>
+
+<main class="wrap">
+<div class="banner" id="part2">
+<h1>1. k-평균 군집 분석</h1>
+<p>군집 분석을 위한 대표적인 알고리즘인 k-평균 군집화의 원리와 과정을 알아봅니다.</p>
+</div>
+<div class="grid">
+<section class="card">
+<h2>k-평균 군집 분석의 이해</h2>
+<p class="lead">주어진 <mark>데이터 포인트</mark>를 <mark>k개의 군집(cluster)</mark>으로 묶어서 분석하는 방법입니다.</p>
+<div class="keys">
+<div class="key"><b>k</b><span>군집 개수. 분석 전에 <b>미리 결정</b>합니다.</span></div>
+<div class="key"><b>평균(means)</b><span>각 데이터 포인트가 속한 군집 중심까지의 평균 거리. 군집의 중심점은 그 군집 데이터들의 <b>평균 위치</b>로 정해집니다.</span></div>
+<div class="key"><b>중심점 ★<br>(centroid)</b><span>각 군집을 대표하는 점. 데이터는 <b>가장 가까운 중심점</b>의 군집에 할당됩니다.</span></div>
+</div>
+<p class="small">데이터의 속성값을 기반으로 유사도(거리)를 측정하고, 유사도가 높은(거리가 가까운) 데이터 포인트들을 같은 군집으로 묶어 분석합니다.</p>
+<div class="analogy"><strong>🙋 반장 뽑기로 생각해 보기</strong> — 학생들 = 데이터, ★ 반장 = 중심점
+<ol>
+<li><b>대표(중심점) 뽑기</b>: k명의 반장을 임의로 정해요.</li>
+<li><b>가까운 팀으로</b>: 학생은 가장 가까운 반장의 팀에 들어가요.</li>
+<li><b>중심점 다시 뽑기</b>: 팀원들의 평균 위치로 반장 자리를 옮겨요.</li>
+<li><b>반복</b>: 반장이 더 이상 움직이지 않으면 완료!</li>
+</ol></div>
+</section>
+<section class="card">
+<h2>k-평균 군집화 과정</h2>
+<ol class="flow" id="flowStatic"></ol>
+<div class="loopnote">↻ 중심점의 위치가 움직이지 않을 때까지 「중심점 재설정 → 데이터 재할당」을 반복한다.</div>
+<h3>예시: 음악을 BPM과 에너지로 군집화</h3>
+<p class="small" style="margin:0">"내 기분에 따라 들을 수 있는 음악 리스트를 만들어 볼까?" — 음악의 BPM(분당 박자 수)과 에너지를 기준으로 3개의 군집으로 나누면 비슷한 분위기의 음악끼리 묶을 수 있습니다. 아래 <b>2. 직접 해 보기</b>에서 이 데이터로 실험해 보세요.</p>
+</section>
+</div>
+
+<div class="banner" id="lab">
+<h1>2. 직접 해 보기: k-평균 군집화 시뮬레이터</h1>
+<p>「다음 단계」를 한 번씩 눌러 보며 중심점(★)이 어떻게 움직이고 팀이 어떻게 바뀌는지 관찰하세요.</p>
+</div>
+<div class="labgrid">
+<section class="card">
+<div class="field">
+<label for="dataset">데이터 선택</label>
+<select id="dataset"></select>
+</div>
+<div class="field">
+<label for="k">군집 수 k <output id="kVal">3</output></label>
+<input id="k" type="range" min="2" max="6" step="1" value="3">
+</div>
+<div class="field">
+<label>그래프 클릭 모드</label>
+<div class="modes">
+<label><input type="radio" name="mode" value="none" checked> 클릭 안 함</label>
+<label><input type="radio" name="mode" value="centroid"> ★ 중심점을 클릭해서 직접 놓기</label>
+<label><input type="radio" name="mode" value="point"> ● 데이터 점 추가하기</label>
+</div>
+</div>
+<div class="btncol">
+<button class="primary" id="next">▶ 1단계: 중심점 뽑기</button>
+<button class="secondary" id="run">⏩ 끝까지 실행</button>
+<button class="secondary" id="repick">🎲 중심점 다시 뽑기</button>
+<button class="secondary" id="newdata">🔄 새 데이터 만들기</button>
+</div>
+<div class="metrics">
+<div class="metric"><span>반복 횟수</span><strong id="iter">0</strong></div>
+<div class="metric"><span>오차 제곱합</span><strong id="sse">—</strong><em>작을수록 좋음</em></div>
+<div class="metric"><span>실루엣 계수</span><strong id="sil">—</strong><em>1에 가까울수록 좋음</em></div>
+</div>
+<h3>진행 과정</h3>
+<ol class="flow" id="flowLive"></ol>
+</section>
+<section class="card">
+<div class="status" id="status"></div>
+<div class="chartbox">
+<svg id="plot" viewBox="0 0 640 430" role="img" aria-label="k-평균 군집화 산점도">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e0242f"/></marker></defs>
+<g id="gGrid"></g><g id="gLines"></g><g id="gPoints"></g><g id="gGhost"></g><g id="gArrows"></g><g id="gCents"></g>
+</svg>
+<div class="legend" id="legend"></div>
+</div>
+<div class="steps4" id="steps4">
+<div class="s4"><b>1단계 대표(중심점) 뽑기</b>k개의 중심점을 임의로 정해요.</div>
+<div class="s4"><b>2단계 가까운 팀으로</b>각 데이터는 가장 가까운 중심점의 팀에 소속돼요.</div>
+<div class="s4"><b>3단계 중심점 다시 뽑기</b>팀 데이터들의 평균 위치로 중심점을 옮겨요.</div>
+<div class="s4"><b>4단계 반복</b>중심점이 더 이상 움직이지 않으면 완료!</div>
+</div>
+<h3>군집별 요약</h3>
+<div style="overflow-x:auto"><table>
+<thead><tr><th>팀</th><th>데이터 수</th><th>중심점 위치</th><th>군집 내 오차 제곱합</th></tr></thead>
+<tbody id="summary"></tbody>
+</table></div>
+<p class="small">거리는 두 축의 단위 차이를 없애기 위해 각 축을 0~100으로 맞춘 뒤 계산합니다.</p>
+</section>
+</div>
+
+<div class="banner" id="part4">
+<h1>3. 좋은 군집과 k 정하기</h1>
+<p>군집 내 유사성과 군집 간 상이성을 숫자로 확인하고, 알맞은 군집 수 k를 골라 봅니다.</p>
+</div>
+<div class="grid">
+<section class="card">
+<h2>군집이 잘 나뉘었는지 확인하는 두 가지 방법</h2>
+<h3>① 오차 제곱합 (군집 내 유사성)</h3>
+<div class="formula">오차 제곱합 = Σ (각 데이터와 자기 군집 중심점 사이의 거리)²</div>
+<p class="small">같은 군집의 데이터가 중심점 가까이 모여 있을수록 작아집니다. 단, k를 늘리면 항상 줄어들기 때문에 이것만으로 k를 정할 수는 없습니다. 줄어드는 폭이 갑자기 작아지는 지점(<b>엘보, 팔꿈치</b>)을 찾습니다.</p>
+<h3>② 실루엣 계수 (군집 내 유사성 + 군집 간 상이성)</h3>
+<div class="formula">s = (b − a) ÷ max(a, b)</div>
+<p class="small"><b>a</b>: 같은 군집 데이터들과의 평균 거리(작을수록 좋음)<br><b>b</b>: 가장 가까운 다른 군집 데이터들과의 평균 거리(클수록 좋음)<br>모든 데이터의 s를 평균한 값이 <b>1에 가까울수록</b> 군집이 잘 나뉜 것이고, 0에 가까우면 경계가 애매, 음수이면 잘못 묶인 것입니다.</p>
+</section>
+<section class="card">
+<h2>k를 바꿔 가며 비교하기</h2>
+<p class="lead">현재 데이터로 k = 2 ~ 6일 때 각각 군집화를 끝까지 실행해 비교합니다. 행을 누르면 그 k로 시뮬레이터를 실행합니다.</p>
+<button id="compare">📊 k별 결과 비교하기</button>
+<div style="overflow-x:auto;margin-top:12px"><table>
+<thead><tr><th>k</th><th>오차 제곱합</th><th>실루엣 계수</th></tr></thead>
+<tbody id="compareRows"><tr><td colspan="3" class="small">버튼을 눌러 비교해 보세요.</td></tr></tbody>
+</table></div>
+<p class="small" id="compareNote"></p>
+</section>
+</div>
+
+<div class="banner" id="quiz">
+<h1>확인해 봅시다!</h1>
+<p>먼저 스스로 답을 생각해 본 뒤 질문을 눌러 정답을 확인하세요.</p>
+</div>
+<section class="card">
+<details><summary>1. 군집 분석이란 무엇인가요?</summary><p class="answer">유사한 특징을 가진 데이터들을 같은 그룹(군집)으로 묶는 과정</p></details>
+<details><summary>2. k-평균 군집 분석에서 k는 무엇을 의미하나요?</summary><p class="answer">군집의 개수 (분석 전에 미리 정한다)</p></details>
+<details><summary>3. 데이터는 어느 군집에 할당되나요?</summary><p class="answer">거리상 가장 가까운 중심점의 군집</p></details>
+<details><summary>4. 중심점은 어떻게 다시 정해지나요?</summary><p class="answer">그 군집에 속한 데이터 포인트들의 평균 위치로 재설정된다</p></details>
+<details><summary>5. k-평균 군집화는 언제 끝나나요?</summary><p class="answer">중심점이 더 이상 이동하지 않을 때 (할당과 재설정을 반복한 뒤)</p></details>
+<details><summary>6. 좋은 군집이란 어떤 군집인가요?</summary><p class="answer">군집 안의 데이터는 서로 비슷하고(오차 제곱합이 작음), 다른 군집과는 뚜렷이 다른(실루엣 계수가 1에 가까움) 군집</p></details>
+<div style="margin-top:12px"><button class="secondary" id="toggleAnswers">정답 모두 보기</button></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const svgNS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent){const e=document.createElementNS(svgNS,tag);Object.entries(attrs||{}).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
+const COLORS=["#e4572e","#2e86de","#2bb673","#f5a623","#8e44ad","#17becf"];
+const TEAMS=["A팀","B팀","C팀","D팀","E팀","F팀"];
+const GRAY="#a3adb8";
+const FLOW=["군집의 개수(k) 선정","초기 중심점 설정","데이터를 군집에 할당","중심점 재설정","데이터를 중심점에 재할당"];
+const DATASETS={
+ music:{label:"🎵 음악 (BPM · 에너지)",xLabel:"BPM (분당 박자 수)",yLabel:"에너지",xr:[50,200],yr:[25,95],dec:0,
+  groups:[{n:22,cx:100,cy:73,sx:13,sy:7},{n:14,cx:105,cy:44,sx:15,sy:6},{n:14,cx:165,cy:68,sx:13,sy:7}]},
+ shop:{label:"🛍️ 고객 (방문 빈도 · 구매 금액)",xLabel:"방문 빈도",yLabel:"구매 금액",xr:[0,10],yr:[0,10],dec:1,
+  groups:[{n:14,cx:2,cy:2.3,sx:.6,sy:.7},{n:16,cx:3.3,cy:5.6,sx:.7,sy:.8},{n:15,cx:7,cy:7.6,sx:.7,sy:.8},{n:12,cx:7.6,cy:3,sx:.7,sy:.7}]},
+ random:{label:"🎲 무작위로 흩어진 데이터",xLabel:"특성 1",yLabel:"특성 2",xr:[0,10],yr:[0,10],dec:1,uniform:55}
+};
+const chart={left:62,right:620,top:18,bottom:368};
+
+let dsKey="music",seed=7,points=[],cents=[],prev=null,phase="empty",iter=0,timer=null,changed=0;
+
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function genData(){
+ const d=DATASETS[dsKey],r=rng(seed*997+dsKey.length);
+ const clamp=(v,[lo,hi])=>Math.min(hi,Math.max(lo,v));
+ const gauss=()=>Math.sqrt(-2*Math.log(r()||1e-9))*Math.cos(2*Math.PI*r());
+ points=[];
+ if(d.uniform){for(let i=0;i<d.uniform;i++)points.push({x:d.xr[0]+r()*(d.xr[1]-d.xr[0]),y:d.yr[0]+r()*(d.yr[1]-d.yr[0]),c:-1});}
+ else d.groups.forEach(g=>{for(let i=0;i<g.n;i++)points.push({x:clamp(g.cx+gauss()*g.sx,d.xr),y:clamp(g.cy+gauss()*g.sy,d.yr),c:-1});});
+}
+const K=()=>Number($("k").value);
+const mode=()=>document.querySelector("input[name=mode]:checked").value;
+// 두 축의 단위가 달라도 공정하게 비교하도록 각 축을 0~100으로 맞춘 좌표에서 거리를 잰다.
+function nx(x){const d=DATASETS[dsKey];return(x-d.xr[0])/(d.xr[1]-d.xr[0])*100}
+function ny(y){const d=DATASETS[dsKey];return(y-d.yr[0])/(d.yr[1]-d.yr[0])*100}
+function d2(p,c){const dx=nx(p.x)-nx(c.x),dy=ny(p.y)-ny(c.y);return dx*dx+dy*dy}
+function nearest(p,cs){let best=0,bd=Infinity;cs.forEach((c,j)=>{const v=d2(p,c);if(v<bd){bd=v;best=j}});return best}
+function means(pts,cs){return cs.map((c,j)=>{const m=pts.filter(p=>p.c===j);return m.length?{x:m.reduce((s,p)=>s+p.x,0)/m.length,y:m.reduce((s,p)=>s+p.y,0)/m.length}:{...c}})}
+function sseOf(pts,cs){return pts.reduce((s,p)=>p.c>=0?s+d2(p,cs[p.c]):s,0)}
+function silhouette(pts,k){
+ const used=new Set(pts.map(p=>p.c));if(used.size<2||pts.some(p=>p.c<0))return null;
+ let total=0;
+ pts.forEach(p=>{
+  const sums=Array(k).fill(0),cnt=Array(k).fill(0);
+  pts.forEach(q=>{if(q!==p){sums[q.c]+=Math.sqrt(d2(p,q));cnt[q.c]++}});
+  if(!cnt[p.c])return;
+  const a=sums[p.c]/cnt[p.c];let b=Infinity;
+  for(let j=0;j<k;j++)if(j!==p.c&&cnt[j])b=Math.min(b,sums[j]/cnt[j]);
+  total+=(b-a)/Math.max(a,b);
+ });
+ return total/pts.length;
+}
+function randomPick(k){const idx=[...points.keys()].sort(()=>Math.random()-.5).slice(0,k);return idx.map(i=>({x:points[i].x,y:points[i].y}))}
+
+function setStatus(html){$("status").innerHTML=html}
+function stopRun(){if(timer){clearInterval(timer);timer=null;$("run").textContent="⏩ 끝까지 실행";}}
+function clearCentroids(){
+ stopRun();cents=[];prev=null;phase="empty";iter=0;points.forEach(p=>p.c=-1);
+}
+function pickStep(){
+ cents=randomPick(K());prev=null;iter=0;points.forEach(p=>p.c=-1);phase="picked";
+ setStatus(`<b>1단계 대표(중심점) 뽑기</b> — ${K()}개의 중심점(★)을 무작위로 정했어요. 아직 어느 팀에도 속하지 않은 데이터는 회색입니다.`);
+}
+function assignStep(){
+ changed=0;points.forEach(p=>{const c=nearest(p,cents);if(c!==p.c){changed++;p.c=c}});
+ const first=iter===0;
+ if(!first&&changed===0){phase="done";setStatus(`<b>완료!</b> 다시 할당해도 팀을 바꾼 데이터가 없어 중심점이 더 이상 움직이지 않습니다. 총 <b>${iter}번</b> 반복했어요.`);return}
+ phase="assigned";
+ setStatus(first?`<b>2단계 가까운 팀으로</b> — 각 데이터가 거리상 가장 가까운 중심점의 팀에 소속되었어요. 회색 선은 데이터와 중심점을 잇는 거리입니다.`
+  :`<b>데이터를 중심점에 재할당</b> — 새 중심점 기준으로 다시 가장 가까운 팀을 찾았어요. 팀을 바꾼 데이터: <b>${changed}개</b>`);
+}
+function moveStep(){
+ prev=cents.map(c=>({...c}));cents=means(points,cents);iter++;
+ const moved=Math.max(...cents.map((c,j)=>Math.sqrt(d2(c,prev[j]))));
+ if(moved<1e-9){phase="done";setStatus(`<b>완료!</b> 중심점이 더 이상 움직이지 않습니다. 총 <b>${iter}번</b> 반복했어요.`);return}
+ phase="moved";
+ setStatus(`<b>3단계 중심점 다시 뽑기</b> — 각 중심점이 자기 팀 데이터들의 <b>평균 위치</b>로 옮겨졌어요(빨간 화살표). 가장 많이 움직인 거리: <b>${moved.toFixed(1)}</b>`);
+}
+function nextStep(){
+ if(phase==="done")return;
+ if(phase==="empty"){
+  if(mode()==="centroid"){setStatus(`그래프를 클릭해서 중심점 ★을 <b>${K()-cents.length}개</b> 더 놓아 주세요.`);return}
+  pickStep();
+ }else if(phase==="picked"||phase==="moved")assignStep();
+ else if(phase==="assigned")moveStep();
+ render();
+}
+function runAll(){
+ if(timer){stopRun();return}
+ if(phase==="empty"&&mode()==="centroid"){nextStep();return}
+ $("run").textContent="⏸ 멈추기";
+ timer=setInterval(()=>{nextStep();if(phase==="done"||iter>100)stopRun();},650);
+ nextStep();
+}
+
+function fmtV(v){return v.toFixed(DATASETS[dsKey].dec)}
+function star(cx,cy,r){let s="";for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;s+=(i?"L":"M")+(cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1)}return s+"Z"}
+function px(x){const d=DATASETS[dsKey];return chart.left+(x-d.xr[0])/(d.xr[1]-d.xr[0])*(chart.right-chart.left)}
+function py(y){const d=DATASETS[dsKey];return chart.bottom-(y-d.yr[0])/(d.yr[1]-d.yr[0])*(chart.bottom-chart.top)}
+function renderFlow(id,stage,done){
+ const ol=$(id);ol.className="flow"+(done?" done":"");
+ ol.innerHTML=FLOW.map((t,i)=>`<li class="${stage===undefined||done?"":i===stage?"active":i<stage?"passed":""}">${t}</li>`).join("");
+}
+function stage(){
+ if(phase==="empty")return cents.length?1:0;
+ if(phase==="picked")return 1;
+ if(phase==="assigned")return iter===0?2:4;
+ if(phase==="moved")return 3;
+ return 4;
+}
+function render(){
+ const d=DATASETS[dsKey];
+ ["gGrid","gLines","gPoints","gGhost","gArrows","gCents"].forEach(id=>$(id).innerHTML="");
+ const g=$("gGrid");
+ for(let i=0;i<=5;i++){
+  const vx=d.xr[0]+i*(d.xr[1]-d.xr[0])/5,vy=d.yr[0]+i*(d.yr[1]-d.yr[0])/5,X=px(vx),Y=py(vy);
+  el("line",{x1:X,y1:chart.top,x2:X,y2:chart.bottom,stroke:"#e7edf5"},g);
+  el("line",{x1:chart.left,y1:Y,x2:chart.right,y2:Y,stroke:"#e7edf5"},g);
+  el("text",{x:X,y:chart.bottom+20,"text-anchor":"middle",fill:"#68788c","font-size":11},g).textContent=+vx.toFixed(1);
+  el("text",{x:chart.left-8,y:Y+4,"text-anchor":"end",fill:"#68788c","font-size":11},g).textContent=+vy.toFixed(1);
+ }
+ el("line",{x1:chart.left,y1:chart.bottom,x2:chart.right,y2:chart.bottom,stroke:"#63758c","stroke-width":1.4},g);
+ el("line",{x1:chart.left,y1:chart.top,x2:chart.left,y2:chart.bottom,stroke:"#63758c","stroke-width":1.4},g);
+ el("text",{x:(chart.left+chart.right)/2,y:chart.bottom+44,"text-anchor":"middle",fill:"#40536b","font-size":13,"font-weight":700},g).textContent=d.xLabel;
+ el("text",{x:16,y:(chart.top+chart.bottom)/2,"text-anchor":"middle",fill:"#40536b","font-size":13,"font-weight":700,transform:`rotate(-90 16 ${(chart.top+chart.bottom)/2})`},g).textContent=d.yLabel;
+ // 3단계 직후에는 교과서 그림처럼 이전 중심점(×)에 연결선을 그리고, 새 중심점으로 빨간 화살표를 그린다.
+ const lineTo=phase==="moved"&&prev?prev:cents;
+ points.forEach(p=>{if(p.c>=0&&lineTo[p.c])el("line",{x1:px(p.x),y1:py(p.y),x2:px(lineTo[p.c].x),y2:py(lineTo[p.c].y),stroke:COLORS[p.c],"stroke-opacity":.35,"stroke-width":1.2},$("gLines"));});
+ points.forEach(p=>el("circle",{cx:px(p.x),cy:py(p.y),r:5.5,fill:p.c>=0?COLORS[p.c]:GRAY,stroke:"white","stroke-width":1.5},$("gPoints")));
+ if(phase==="moved"&&prev){
+  prev.forEach((c,j)=>{
+   const X=px(c.x),Y=py(c.y);
+   el("path",{d:`M${X-6},${Y-6}L${X+6},${Y+6}M${X+6},${Y-6}L${X-6},${Y+6}`,stroke:"#1f2937","stroke-width":2.5},$("gGhost"));
+   if(Math.hypot(px(cents[j].x)-X,py(cents[j].y)-Y)>6)el("line",{x1:X,y1:Y,x2:px(cents[j].x),y2:py(cents[j].y),stroke:"#e0242f","stroke-width":2.5,"marker-end":"url(#arrow)"},$("gArrows"));
+  });
+ }
+ cents.forEach((c,j)=>el("path",{d:star(px(c.x),py(c.y),15),fill:COLORS[j],stroke:"#1f2937","stroke-width":1.6},$("gCents")));
+
+ $("legend").innerHTML=Array.from({length:K()},(_,j)=>`<span><i class="dot" style="background:${COLORS[j]}"></i>${TEAMS[j]}</span>`).join("")
+  +`<span><i class="dot" style="background:${GRAY}"></i>소속 없음</span><span>★ 중심점</span>`+(phase==="moved"?`<span>✕ 이전 중심점</span>`:"");
+ $("iter").textContent=iter;
+ const assigned=points.some(p=>p.c>=0);
+ $("sse").textContent=assigned?Math.round(sseOf(points,cents)).toLocaleString():"—";
+ const s=assigned?silhouette(points,K()):null;$("sil").textContent=s===null?"—":s.toFixed(2);
+ $("summary").innerHTML=cents.length?cents.map((c,j)=>{
+  const m=points.filter(p=>p.c===j);
+  return `<tr><td><i class="dot" style="background:${COLORS[j]}"></i>${TEAMS[j]}</td><td>${m.length}</td><td>(${fmtV(c.x)}, ${fmtV(c.y)})</td><td>${m.length?Math.round(m.reduce((t,p)=>t+d2(p,c),0)).toLocaleString():"—"}</td></tr>`;
+ }).join(""):`<tr><td colspan="4" class="small">중심점을 정하면 군집별 정보가 표시됩니다.</td></tr>`;
+ const st=stage();
+ renderFlow("flowLive",st,phase==="done");
+ document.querySelectorAll("#steps4 .s4").forEach((e,i)=>e.classList.toggle("active",phase==="done"?i===3:[0,0,1,2,1][st]===i&&phase!=="empty"||(phase==="empty"&&i===0)));
+ const label={empty:mode()==="centroid"?"★ 그래프를 클릭해 중심점 놓기":"▶ 1단계: 중심점 뽑기",picked:"▶ 2단계: 가까운 팀으로",assigned:"▶ 3단계: 중심점 다시 뽑기",moved:"▶ 4단계 반복: 다시 가까운 팀으로",done:"✔ 완료! (중심점 다시 뽑기로 재도전)"}[phase];
+ $("next").textContent=label;$("next").disabled=phase==="done";
+ $("plot").classList.toggle("clickable",mode()!=="none");
+}
+
+function svgToData(e){
+ const r=$("plot").getBoundingClientRect(),d=DATASETS[dsKey];
+ const X=(e.clientX-r.left)*640/r.width,Y=(e.clientY-r.top)*430/r.height;
+ if(X<chart.left||X>chart.right||Y<chart.top||Y>chart.bottom)return null;
+ return{x:d.xr[0]+(X-chart.left)/(chart.right-chart.left)*(d.xr[1]-d.xr[0]),y:d.yr[0]+(chart.bottom-Y)/(chart.bottom-chart.top)*(d.yr[1]-d.yr[0])};
+}
+$("plot").addEventListener("click",e=>{
+ const p=svgToData(e);if(!p)return;
+ if(mode()==="centroid"){
+  if(phase!=="empty")clearCentroids();
+  cents.push(p);
+  if(cents.length>=K()){phase="picked";setStatus(`<b>1단계 완료</b> — 중심점 ${K()}개를 직접 놓았어요. 「다음 단계」를 눌러 데이터를 가까운 팀으로 보내 보세요.`);}
+  else setStatus(`중심점 ★을 <b>${K()-cents.length}개</b> 더 놓아 주세요.`);
+ }else if(mode()==="point"){
+  stopRun();points.push({x:p.x,y:p.y,c:-1});
+  if(cents.length===K()){phase="picked";setStatus(`데이터를 추가했어요. 「다음 단계」를 누르면 새 데이터도 가까운 팀으로 들어갑니다.`);}
+  else setStatus(`데이터를 추가했어요. 지금 데이터는 <b>${points.length}개</b>입니다.`);
+ }
+ render();
+});
+document.querySelectorAll("input[name=mode]").forEach(r=>r.addEventListener("change",()=>{
+ if(mode()==="centroid"){clearCentroids();setStatus(`그래프를 클릭해서 중심점 ★을 <b>${K()}개</b> 놓아 보세요. 어디에 놓느냐에 따라 결과가 달라질 수도 있어요!`);}
+ else if(mode()==="point")setStatus("그래프의 빈 곳을 클릭하면 데이터 점이 추가됩니다.");
+ else setStatus("「다음 단계」 버튼을 눌러 한 단계씩 진행해 보세요.");
+ render();
+}));
+$("k").addEventListener("input",()=>{$("kVal").textContent=K();clearCentroids();setStatus(`군집 수를 <b>k = ${K()}</b>로 정했어요. 이제 중심점을 뽑아 보세요.`);render();});
+$("dataset").innerHTML=Object.entries(DATASETS).map(([k,d])=>`<option value="${k}">${d.label}</option>`).join("");
+$("dataset").addEventListener("change",e=>{dsKey=e.target.value;genData();clearCentroids();setStatus("새 데이터를 불러왔어요. 몇 개의 군집으로 나누면 좋을지 먼저 눈으로 예상해 보세요.");$("compareRows").innerHTML=`<tr><td colspan="3" class="small">버튼을 눌러 비교해 보세요.</td></tr>`;$("compareNote").textContent="";render();});
+$("next").addEventListener("click",()=>{stopRun();nextStep();});
+$("run").addEventListener("click",runAll);
+$("repick").addEventListener("click",()=>{clearCentroids();if(mode()==="centroid"){setStatus(`그래프를 클릭해서 중심점 ★을 <b>${K()}개</b> 놓아 보세요.`);}else pickStep();render();});
+$("newdata").addEventListener("click",()=>{seed++;genData();clearCentroids();setStatus("새 데이터를 만들었어요. 「다음 단계」를 눌러 군집화를 시작해 보세요.");render();});
+
+// k별 비교: 초기 중심점에 따라 결과가 달라지므로 여러 번 실행해 오차 제곱합이 가장 작은 결과를 쓴다.
+function solve(k){
+ let best=null;
+ for(let r=0;r<12;r++){
+  const pts=points.map(p=>({x:p.x,y:p.y,c:-1}));let cs=randomPick(k);
+  for(let it=0;it<100;it++){
+   let ch=0;pts.forEach(p=>{const c=nearest(p,cs);if(c!==p.c){ch++;p.c=c}});
+   if(!ch&&it)break;cs=means(pts,cs);
+  }
+  const sse=sseOf(pts,cs);if(!best||sse<best.sse)best={sse,pts};
+ }
+ return{sse:best.sse,sil:silhouette(best.pts,k)};
+}
+$("compare").addEventListener("click",()=>{
+ const res=[2,3,4,5,6].map(k=>({k,...solve(k)}));
+ const maxS=Math.max(...res.map(r=>r.sse)),bestK=res.reduce((a,b)=>b.sil>a.sil?b:a).k;
+ $("compareRows").innerHTML=res.map(r=>`<tr class="${r.k===bestK?"bestrow":""}" data-k="${r.k}" style="cursor:pointer">
+  <td><b>${r.k}</b>${r.k===bestK?" ⭐":""}</td>
+  <td><div style="display:flex;gap:8px;align-items:center"><div class="bar" style="width:${r.sse/maxS*100}%"></div><span>${Math.round(r.sse).toLocaleString()}</span></div></td>
+  <td><div style="display:flex;gap:8px;align-items:center"><div class="bar sil" style="width:${Math.max(0,r.sil)*100}%"></div><span>${r.sil.toFixed(2)}</span></div></td></tr>`).join("");
+ $("compareNote").innerHTML=`⭐ 실루엣 계수가 가장 큰 <b>k = ${bestK}</b>이(가) 이 데이터에 가장 알맞은 군집 수입니다. 오차 제곱합은 k가 커질수록 계속 줄어드는 것도 확인해 보세요.`;
+ document.querySelectorAll("#compareRows tr").forEach(tr=>tr.addEventListener("click",()=>{
+  $("k").value=tr.dataset.k;$("kVal").textContent=tr.dataset.k;
+  document.querySelector("input[name=mode][value=none]").checked=true;
+  clearCentroids();render();$("lab").scrollIntoView({behavior:"smooth",block:"start"});runAll();
+ }));
+});
+
+document.querySelectorAll("button.jump").forEach(b=>b.addEventListener("click",()=>$(b.dataset.target).scrollIntoView({behavior:"smooth",block:"start"})));
+$("toggleAnswers").addEventListener("click",e=>{
+ const all=[...document.querySelectorAll("#quiz + .card details")],open=!all.every(d=>d.open);
+ all.forEach(d=>d.open=open);e.target.textContent=open?"정답 모두 숨기기":"정답 모두 보기";
+});
+renderFlow("flowStatic");
+genData();
+setStatus("「▶ 1단계: 중심점 뽑기」 버튼을 눌러 k-평균 군집화를 시작해 보세요. 그래프를 클릭해 중심점을 직접 놓을 수도 있어요.");
+render();
+</script>
+</body>
+</html>

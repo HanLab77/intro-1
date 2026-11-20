@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>최소제곱법 기울기 실험실</title>
+<style>
+:root{--navy:#123b70;--blue:#1769c2;--sky:#eaf4ff;--ink:#17263c;--muted:#64748b;--line:#d9e3ef;--orange:#f59e0b;--red:#df4545;--green:#16845b}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f7fc;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;line-height:1.55}
+header{background:linear-gradient(120deg,#103c78,#1674c9);color:white;padding:24px 18px}
+.wrap{max-width:1180px;margin:auto;padding:0 16px}
+h1{font-size:clamp(24px,4vw,34px);margin:0 0 5px}
+header p{margin:0;color:#e5f2ff}
+.banner{background:linear-gradient(120deg,#103c78,#1674c9);color:white;padding:24px 18px;margin:32px 0 22px;border-radius:16px}
+.banner p{margin:0;color:#e5f2ff}
+button.jump{margin-top:14px;background:white;color:#123b70;border-radius:999px;padding:9px 16px;box-shadow:0 3px 10px #0a254a33}
+button.jump:hover{background:#eaf4ff;filter:none}
+main{padding:22px 0 42px}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 18px #193e6810}
+.card h2{font-size:19px;margin:0 0 12px;color:var(--navy)}
+.card h3{font-size:16px;margin:16px 0 8px}
+.lead{font-size:15px;color:#40536b;margin:0 0 14px}
+.chartbox{background:#fbfdff;border:1px solid #e5edf6;border-radius:12px;padding:8px}
+svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.axis{stroke:#63758c;stroke-width:1.4}
+.gridline{stroke:#e7edf5;stroke-width:1}
+.regline{stroke:#e34b42;stroke-width:3}
+.point{fill:#1769c2;stroke:white;stroke-width:2;cursor:grab}
+.point:active{cursor:grabbing}
+.centroid{fill:#f59e0b;stroke:#fff;stroke-width:2.5}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#53657b;margin:8px 2px 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.metric{background:#f5f9ff;border-radius:11px;padding:10px}
+.metric span{display:block;color:var(--muted);font-size:12px}
+.metric strong{font-size:22px;color:var(--navy)}
+.formula{background:#fff8e8;border:1px solid #f5d28b;border-radius:12px;padding:12px;margin:10px 0;font-size:18px;text-align:center}
+.formula b{color:#b45309}
+.small{font-size:13px;color:var(--muted)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.control{background:#f8fbff;border:1px solid #e4edf7;border-radius:12px;padding:12px}
+.control label{font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+input[type=range]{width:100%;accent-color:var(--blue);margin:10px 0 2px}
+button{border:0;border-radius:9px;background:var(--blue);color:white;padding:9px 13px;font-weight:700;cursor:pointer}
+button.secondary{background:#eaf2fc;color:#174c88}
+button:hover{filter:brightness(.96)}
+.buttonrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #dce5ef;padding:7px 8px;text-align:center}
+th{background:#eef5fd;color:#24486f}
+td input{width:76px;max-width:100%;padding:5px;border:1px solid #cbd8e6;border-radius:6px;text-align:center;font:inherit}
+.steps{display:grid;gap:9px}
+.step{border-left:4px solid #9cc7f4;background:#f7fbff;padding:10px 12px;border-radius:7px}
+.step strong{color:var(--navy)}
+.callout{background:#eaf8f1;border:1px solid #bce7d0;padding:12px;border-radius:12px;color:#185c42}
+.warn{background:#fff5f3;border:1px solid #ffd2cb;padding:11px;border-radius:10px;color:#8b3027}
+details{margin-top:10px}
+summary{cursor:pointer;font-weight:700;color:var(--navy)}
+.bar{text-decoration:overline;text-decoration-thickness:2px;text-underline-offset:0;padding:0 2px;font-family:"Times New Roman",serif;font-size:1.1em}
+.ym{color:#16845b;font-weight:700}.xm{color:#1769c2;font-weight:700}.am{color:#7c3aed;font-weight:700}
+.formula.intercept{font-size:20px;line-height:1.9}
+.termkey{display:grid;gap:4px;font-size:14px;background:#f8fbff;border:1px solid #e4edf7;border-radius:10px;padding:10px 12px;margin:-2px 0 10px}
+.formula.final{background:#fff4f4;border-color:#f3b4b4;font-size:26px}
+.formula.final b{color:#d62f2f}
+#predX{width:70px;padding:4px;border:1px solid #9fd3b9;border-radius:6px;text-align:center;font:inherit}
+.quiz{display:grid;gap:8px}
+.quiz details{margin:0;border-bottom:1px dashed #cbd8e6;padding:6px 2px 8px}
+.quiz summary{font-weight:600;color:var(--ink)}
+.quiz .answer{margin:8px 0 0;background:#ffe9e9;color:#c62828;font-weight:700;border-radius:8px;padding:8px 10px;text-align:center}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.controls{grid-template-columns:1fr}.card{padding:14px}.metric strong{font-size:18px}.metrics{gap:5px}}
+</style>
+</head>
+<body>
+<header id="top"><div class="wrap">
+<h1>최소제곱법 기울기 실험실</h1>
+<p>점을 움직이고 숫자를 바꾸면서, 왜 (x편차×y편차)의 합을 (x편차²)의 합으로 나누는지 직접 확인해 보세요.</p>
+<button class="jump" data-target="interceptPart">y절편과 회귀식 구하기로 바로 가기 ↓</button>
+</div></header>
+<main class="wrap">
+<div class="grid">
+<section class="card">
+<h2>① 데이터와 회귀직선</h2>
+<p class="lead">파란 점을 마우스나 손가락으로 움직여 보세요. 표의 숫자를 직접 바꿔도 됩니다. 주황색 점은 평균점입니다.</p>
+<div class="chartbox">
+<svg id="plot" viewBox="0 0 640 390" role="img" aria-label="공부 시간과 시험 점수 산점도 및 회귀직선">
+<defs><clipPath id="plotArea"><rect x="58" y="25" width="552" height="305"/></clipPath></defs>
+<g id="gridlines"></g><g id="axes"></g><line id="regression" class="regline" clip-path="url(#plotArea)"/>
+<g id="residuals" clip-path="url(#plotArea)"></g><g id="points"></g><circle id="meanpoint" class="centroid" r="8"/>
+<g id="labels"></g>
+</svg>
+<div class="legend"><span><i class="dot" style="background:#1769c2"></i>학생 데이터 (드래그 가능)</span><span><i class="dot" style="background:#f59e0b"></i>평균점</span><span><i class="dot" style="background:#e34b42"></i>최소제곱 회귀직선</span></div>
+</div>
+<div class="metrics">
+<div class="metric"><span>x 평균</span><strong id="xbar">12.50</strong></div>
+<div class="metric"><span>y 평균</span><strong id="ybar">30.00</strong></div>
+<div class="metric"><span>기울기 a</span><strong id="slope">2.20</strong></div>
+</div>
+<div class="formula" id="equation">회귀식: <b>y = 2.20x + 2.50</b></div>
+<p class="small">그래프의 세로 점선은 각 학생의 실제 점수와 회귀직선의 예측 점수 차이(잔차)를 나타냅니다.</p>
+</section>
+
+<section class="card">
+<h2>② 숫자를 직접 바꿔 보기</h2>
+<p class="lead">초기 데이터는 첨부 자료와 동일합니다: A(5, 16), B(10, 23), C(15, 31), D(20, 50).</p>
+<table>
+<thead><tr><th>학생</th><th>공부 시간 x</th><th>시험 점수 y</th></tr></thead>
+<tbody id="dataRows"></tbody>
+</table>
+<div class="buttonrow">
+<button id="reset">교과서 데이터로 초기화</button>
+<button class="secondary" id="random">예시 데이터 만들기</button>
+</div>
+<h3>변화 실험</h3>
+<div class="controls">
+<div class="control">
+<label for="yScale">점수 편차 배율 <output id="yScaleVal">1.0배</output></label>
+<input id="yScale" type="range" min="0" max="2.5" step=".1" value="1">
+<div class="small">평균점은 그대로 두고, 모든 점수의 평균으로부터의 거리만 늘리거나 줄입니다.</div>
+</div>
+<div class="control">
+<label for="xScale">공부 시간 편차 배율 <output id="xScaleVal">1.0배</output></label>
+<input id="xScale" type="range" min=".5" max="2" step=".1" value="1">
+<div class="small">평균 공부 시간은 그대로 두고, x의 편차만 늘리거나 줄입니다.</div>
+</div>
+</div>
+<p class="small">슬라이더는 현재 데이터에서 평균을 기준으로 편차를 배율만큼 조정합니다. 표를 직접 수정하면 실험 배율은 1로 돌아갑니다.</p>
+</section>
+
+<section class="card">
+<h2>③ 분자와 분모가 만들어지는 과정</h2>
+<p class="lead">현재 데이터에서 평균을 뺀 값과, 각 곱셈 결과를 확인하세요.</p>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>학생</th><th>x 편차</th><th>y 편차</th><th>x편차 × y편차</th><th>x편차²</th></tr></thead>
+<tbody id="deviationRows"></tbody>
+<tfoot><tr><th>합계</th><th>—</th><th>—</th><th id="numTotal">275.00</th><th id="denTotal">125.00</th></tr></tfoot>
+</table>
+</div>
+<div class="metrics">
+<div class="metric"><span>분자 합계</span><strong id="numerator">275</strong></div>
+<div class="metric"><span>분모 합계</span><strong id="denominator">125</strong></div>
+<div class="metric"><span>기울기</span><strong id="ratio">2.2</strong></div>
+</div>
+<div class="formula">기울기 = <b>함께 움직인 양 ÷ x의 움직임 기준량</b><br><span id="fraction" style="font-size:22px">275 ÷ 125 = 2.2</span></div>
+</section>
+
+<section class="card">
+<h2>④ 왜 나누면 기울기가 될까?</h2>
+<div class="steps">
+<div class="step"><strong>1. 직선의 기울기란?</strong><br>가로(x)가 1만큼 변할 때 세로(y)가 얼마나 변하는지입니다. 그래서 단위도 '점수 ÷ 시간'처럼 됩니다.</div>
+<div class="step"><strong>2. 분모는 x의 편차² 합</strong><br>x가 평균에서 얼마나 멀리 퍼져 있는지를 제곱으로 모은 기준량입니다. 음수와 양수가 상쇄되지 않게 합니다.</div>
+<div class="step"><strong>3. 분자는 x편차×y편차 합</strong><br>각 학생의 x 움직임과 y 움직임이 같은 방향인지, 얼마나 함께 움직이는지를 x 기준으로 모읍니다.</div>
+<div class="step"><strong>4. 나누는 이유</strong><br>분자는 'x의 움직임에 연결된 y의 움직임'을 담고, 분모는 그 x 움직임의 크기를 담습니다. 따라서 분모로 나누어 x가 1만큼 움직일 때의 y 변화량으로 환산합니다.</div>
+</div>
+<div class="callout" style="margin-top:12px">
+<strong>직접 확인해 보세요!</strong><br>
+점수 편차 배율을 2배로 올리면 분자는 2배, 분모는 그대로, 기울기는 2배가 됩니다.<br>
+공부 시간 편차 배율을 2배로 올리면 분자는 2배, 분모는 4배가 되어 기울기는 절반이 됩니다.
+</div>
+<details>
+<summary>조금 더 수학적으로 확인하기</summary>
+<p>회귀직선을 ŷ = a(x − x평균) + y평균 형태로 놓습니다. 각 점의 세로 오차는 y편차 − a·x편차입니다. 이 오차들을 제곱해 모두 더한 값이 가장 작아지도록 a를 정하면, 계산 결과 a = Σ(x편차·y편차) ÷ Σ(x편차²)가 됩니다.</p>
+<p class="small">즉, 분모의 제곱은 임의로 값을 부풀리는 장치가 아닙니다. 오차 제곱의 합을 가장 작게 만드는 조건을 계산하다 보면 자연스럽게 생기는 값입니다.</p>
+</details>
+<div class="warn" style="margin-top:12px"><strong>꼭 기억할 점</strong><br>분모 125가 '실제 편차의 합'은 아닙니다. 편차를 제곱해 만든 기준량입니다. 분자도 같은 x편차를 포함해 계산하므로, 둘의 비율이 최적의 기울기를 결정합니다.</div>
+</section>
+</div>
+
+<div class="banner" id="interceptPart">
+<h1>y절편과 회귀식 구하기</h1>
+<p>구한 기울기와 평균점을 이용해 y절편을 계산하고, 최종 회귀식을 완성해 보세요.</p>
+<button class="jump" data-target="top">최소제곱법 기울기 실험실로 돌아가기 ↑</button>
+</div>
+
+<div class="grid">
+<section class="card">
+<h2>⑤ y절편과 회귀식 구하기</h2>
+<p class="lead">회귀직선은 반드시 평균점 (x평균, y평균)을 지납니다. 그래서 기울기 a를 구한 뒤 평균점을 대입하면 y절편 b를 구할 수 있습니다.</p>
+<h3>① y절편 b를 구해 보세요.</h3>
+<div class="formula intercept"><i>b</i> = <span class="ym"><i class="bar">y</i></span> − <span class="am"><i>a</i></span> × <span class="xm"><i class="bar">x</i></span> = <span id="bCalc">30.00 − (2.20 × 12.50)</span> = <b id="bValue">2.50</b></div>
+<div class="termkey">
+<span class="ym"><i class="bar">y</i> : y(시험 점수)의 평균 = <strong id="keyY">30.00</strong></span>
+<span class="am"><i>a</i> : 기울기 = <strong id="keyA">2.20</strong></span>
+<span class="xm"><i class="bar">x</i> : x(공부 시간)의 평균 = <strong id="keyX">12.50</strong></span>
+</div>
+<h3>② 최종적인 회귀식을 써 보세요.</h3>
+<div class="formula final" id="finalEquation"><b>y = 2.20x + 2.50</b></div>
+<p class="small">위의 점을 움직이거나 표의 숫자, 슬라이더를 바꾸면 y절편과 회귀식도 현재 데이터에 맞게 다시 계산됩니다.</p>
+<div class="callout"><strong>예측해 보기</strong><br>
+공부 시간 <input id="predX" type="number" step="any" value="12" aria-label="예측할 공부 시간"> 시간이면 예상 점수는 <strong id="predY">28.90</strong>점입니다.
+</div>
+</section>
+
+<section class="card">
+<h2>⑥ 확인해 봅시다!</h2>
+<p class="lead">먼저 스스로 답을 생각해 본 뒤 질문을 눌러 정답을 확인하세요.</p>
+<div class="quiz">
+<details><summary>1. 기울기는 무엇을 의미하나요?</summary><p class="answer">x가 1 증가할 때 y가 얼마나 증가하는지</p></details>
+<details><summary>2. 분자에서 x와 y의 차이를 서로 곱하는 이유는 무엇인가요?</summary><p class="answer">x와 y가 함께 움직이는 정도를 알기 위해서</p></details>
+<details><summary>3. 분모를 제곱하는 이유는 무엇인가요?</summary><p class="answer">음수와 양수가 상쇄되지 않고, 평균에서 멀리 떨어진 정도를 크게 반영하기 위해서</p></details>
+<details><summary>4. 왜 이 공식을 사용하면 기울기가 구해지는지 간단히 설명해 보세요.</summary><p class="answer">오차 제곱의 합이 최소가 되는 직선을 찾았기 때문</p></details>
+</div>
+<div class="buttonrow"><button class="secondary" id="toggleAnswers">정답 모두 보기</button></div>
+</section>
+</div>
+</main>
+<script>
+const original=[{name:"A",x:5,y:16},{name:"B",x:10,y:23},{name:"C",x:15,y:31},{name:"D",x:20,y:50}];
+let data=original.map(d=>({...d}));
+const $=id=>document.getElementById(id);
+const fmt=(v,n=2)=>Number.isFinite(v)?v.toFixed(n):"—";
+const sum=a=>a.reduce((s,v)=>s+v,0);
+let dragIndex=-1;
+const svgNS="http://www.w3.org/2000/svg";
+const chart={left:58,right:610,top:25,bottom:330};
+function el(tag,attrs,parent){const e=document.createElementNS(svgNS,tag);Object.entries(attrs||{}).forEach(([k,v])=>e.setAttribute(k,v));parent.appendChild(e);return e}
+function stats(){
+ const xb=sum(data.map(d=>d.x))/data.length, yb=sum(data.map(d=>d.y))/data.length;
+ const dx=data.map(d=>d.x-xb),dy=data.map(d=>d.y-yb);
+ const numerator=sum(dx.map((v,i)=>v*dy[i])),denominator=sum(dx.map(v=>v*v));
+ const a=denominator?numerator/denominator:0,b=yb-a*xb;
+ return {xb,yb,dx,dy,numerator,denominator,a,b};
+}
+function renderTable(){
+ $("dataRows").innerHTML=data.map((d,i)=>`<tr><th>${d.name}</th><td><input aria-label="${d.name} 공부 시간" type="number" step="any" value="${d.x}" data-i="${i}" data-k="x"></td><td><input aria-label="${d.name} 시험 점수" type="number" step="any" value="${d.y}" data-i="${i}" data-k="y"></td></tr>`).join("");
+ document.querySelectorAll("#dataRows input").forEach(inp=>inp.addEventListener("change",e=>{
+ const i=+e.target.dataset.i,k=e.target.dataset.k,v=Number(e.target.value);
+ if(Number.isFinite(v)){data[i][k]=v;resetSliders();render();}
+ }));
+}
+function axisRange(vals,defLo,defHi,unit){
+ const lo=Math.min(defLo,Math.floor(Math.min(...vals)/unit)*unit),hi=Math.max(defHi,Math.ceil(Math.max(...vals)/unit)*unit);
+ const step=unit*Math.max(1,Math.ceil((hi-lo)/unit/10));
+ return {lo,hi:lo+Math.ceil((hi-lo)/step)*step,step};
+}
+// 축이 데이터에 맞춰 함께 늘어나면 슬라이더를 움직여도 그래프 모양이 그대로 보인다.
+// 그래서 슬라이더 최대 배율까지 편차를 늘린 값도 담기도록 축 범위를 미리 잡아 고정한다.
+function plotRange(){
+ if(dragView)return dragView;
+ const ref=base||data,n=ref.length;
+ const xb=sum(ref.map(d=>d.x))/n,yb=sum(ref.map(d=>d.y))/n;
+ const sxMax=Number($("xScale").max),syMax=Number($("yScale").max);
+ const xs=ref.map(d=>xb+(d.x-xb)*sxMax).concat(data.map(d=>d.x));
+ const ys=ref.map(d=>yb+(d.y-yb)*syMax).concat(data.map(d=>d.y));
+ return {xr:axisRange(xs,0,25,5),yr:axisRange(ys,0,60,10)};
+}
+function mapX(x,minX,maxX){return chart.left+(x-minX)/(maxX-minX)*(chart.right-chart.left)}
+function mapY(y,minY,maxY){return chart.bottom-(y-minY)/(maxY-minY)*(chart.bottom-chart.top)}
+function renderPlot(s){
+ const {xr,yr}=plotRange();
+ const minX=xr.lo,maxX=xr.hi,minY=yr.lo,maxY=yr.hi;
+ const gx=$("gridlines"),ax=$("axes"),pts=$("points"),res=$("residuals"),lab=$("labels");
+ [gx,ax,pts,res,lab].forEach(g=>g.innerHTML="");
+ for(let v=minX;v<=maxX+1e-9;v+=xr.step){
+  const x=mapX(v,minX,maxX);
+  el("line",{x1:x,y1:chart.top,x2:x,y2:chart.bottom,class:"gridline"},gx);
+  let t=el("text",{x,y:chart.bottom+22,"text-anchor":"middle",fill:"#68788c","font-size":"11"},lab);t.textContent=+v.toFixed(2);
+ }
+ for(let v=minY;v<=maxY+1e-9;v+=yr.step){
+  const y=mapY(v,minY,maxY);
+  el("line",{x1:chart.left,y1:y,x2:chart.right,y2:y,class:"gridline"},gx);
+  let ty=el("text",{x:chart.left-9,y:y+4,"text-anchor":"end",fill:"#68788c","font-size":"11"},lab);ty.textContent=+v.toFixed(2);
+ }
+ let xt=el("text",{x:chart.right,y:chart.bottom+42,"text-anchor":"end",fill:"#53657b","font-size":"12"},lab);xt.textContent="공부 시간 x";
+ let yt=el("text",{x:chart.left,y:chart.top-10,"text-anchor":"start",fill:"#53657b","font-size":"12"},lab);yt.textContent="시험 점수 y";
+ el("line",{x1:chart.left,y1:chart.bottom,x2:chart.right,y2:chart.bottom,class:"axis"},ax);
+ el("line",{x1:chart.left,y1:chart.top,x2:chart.left,y2:chart.bottom,class:"axis"},ax);
+ let x1=minX,x2=maxX,y1=s.a*x1+s.b,y2=s.a*x2+s.b;
+ const reg=$("regression");
+ [["x1",mapX(x1,minX,maxX)],["y1",mapY(y1,minY,maxY)],["x2",mapX(x2,minX,maxX)],["y2",mapY(y2,minY,maxY)]].forEach(([k,v])=>reg.setAttribute(k,v));
+ data.forEach((d,i)=>{
+  const px=mapX(d.x,minX,maxX),py=mapY(d.y,minY,maxY),pred=s.a*d.x+s.b,ppy=mapY(pred,minY,maxY);
+  el("line",{x1:px,y1:py,x2:px,y2:ppy,stroke:"#91a5bd","stroke-dasharray":"4 4","stroke-width":"1.5"},res);
+  const c=el("circle",{cx:px,cy:py,r:8,class:"point","data-i":i},pts);
+  c.addEventListener("pointerdown",e=>{dragIndex=i;c.setPointerCapture(e.pointerId);});
+  let t=el("text",{x:px+10,y:py-10,fill:"#174c88","font-size":"13","font-weight":"700"},lab);t.textContent=d.name;
+ });
+ $("meanpoint").setAttribute("cx",mapX(s.xb,minX,maxX));$("meanpoint").setAttribute("cy",mapY(s.yb,minY,maxY));
+ view={xr,yr};
+}
+let view=null;
+function svgPoint(e){const r=$("plot").getBoundingClientRect();return{x:(e.clientX-r.left)*640/r.width,y:(e.clientY-r.top)*390/r.height}}
+// 드래그 중에는 축 범위를 고정해 점이 커서를 따라가도록 한다.
+let dragView=null;
+$("plot").addEventListener("pointerdown",()=>{if(dragIndex>=0)dragView=view;});
+$("plot").addEventListener("pointermove",e=>{
+ if(dragIndex<0||!dragView)return;
+ const p=svgPoint(e),minY=dragView.yr.lo,maxY=dragView.yr.hi;
+ const yy=minY+(chart.bottom-p.y)/(chart.bottom-chart.top)*(maxY-minY);
+ data[dragIndex].y=+yy.toFixed(1);resetSliders();render();
+});
+const endDrag=()=>{if(dragIndex>=0){dragIndex=-1;dragView=null;renderTable();render();}};
+window.addEventListener("pointerup",endDrag);window.addEventListener("pointercancel",endDrag);
+function render(){
+ const s=stats();
+ $("xbar").textContent=fmt(s.xb);$("ybar").textContent=fmt(s.yb);$("slope").textContent=fmt(s.a);
+ $("equation").innerHTML=`회귀식: <b>y = ${fmt(s.a)}x ${s.b<0?"−":"+"} ${fmt(Math.abs(s.b))}</b>`;
+ $("deviationRows").innerHTML=data.map((d,i)=>`<tr><th>${d.name}</th><td>${fmt(s.dx[i])}</td><td>${fmt(s.dy[i])}</td><td>${fmt(s.dx[i]*s.dy[i])}</td><td>${fmt(s.dx[i]*s.dx[i])}</td></tr>`).join("");
+ $("numTotal").textContent=fmt(s.numerator);$("denTotal").textContent=fmt(s.denominator);
+ $("numerator").textContent=fmt(s.numerator);$("denominator").textContent=fmt(s.denominator);$("ratio").textContent=fmt(s.a);
+ $("fraction").textContent=`${fmt(s.numerator)} ÷ ${fmt(s.denominator)} = ${fmt(s.a)}`;
+ $("bCalc").innerHTML=`<span class="ym">${fmt(s.yb)}</span> − (<span class="am">${fmt(s.a)}</span> × <span class="xm">${fmt(s.xb)}</span>)`;
+ $("keyY").textContent=fmt(s.yb);$("keyA").textContent=fmt(s.a);$("keyX").textContent=fmt(s.xb);$("bValue").textContent=fmt(s.b);
+ $("finalEquation").innerHTML=$("equation").querySelector("b").outerHTML;
+ const px=Number($("predX").value);$("predY").textContent=fmt(s.a*px+s.b);
+ renderPlot(s);
+}
+function resetSliders(){base=null;$("xScale").value=1;$("yScale").value=1;$("xScaleVal").textContent="1.0배";$("yScaleVal").textContent="1.0배";}
+// 슬라이더는 조작을 시작한 시점의 데이터를 기준으로 편차를 조정한다.
+let base=null;
+function applyScales(){
+ if(!base)base=data.map(d=>({...d}));
+ const sx=Number($("xScale").value),sy=Number($("yScale").value);
+ const xb=sum(base.map(d=>d.x))/base.length,yb=sum(base.map(d=>d.y))/base.length;
+ data=base.map(d=>({name:d.name,x:+(xb+(d.x-xb)*sx).toFixed(2),y:+(yb+(d.y-yb)*sy).toFixed(2)}));
+ $("xScaleVal").textContent=fmt(sx,1)+"배";$("yScaleVal").textContent=fmt(sy,1)+"배";
+ renderTable();render();
+}
+$("xScale").addEventListener("input",applyScales);$("yScale").addEventListener("input",applyScales);
+$("reset").addEventListener("click",()=>{data=original.map(d=>({...d}));resetSliders();renderTable();render();});
+$("random").addEventListener("click",()=>{data=original.map((d,i)=>({name:d.name,x:5+i*5,y:Math.round(12+i*8+(Math.random()-.5)*18)}));resetSliders();renderTable();render();});
+$("predX").addEventListener("input",render);
+// 이 페이지는 Streamlit iframe 안에 들어가므로 scrollIntoView로 바깥 페이지까지 함께 스크롤한다.
+document.querySelectorAll("button.jump").forEach(btn=>btn.addEventListener("click",()=>{
+ $(btn.dataset.target).scrollIntoView({behavior:"smooth",block:"start"});
+}));
+$("toggleAnswers").addEventListener("click",e=>{
+ const all=[...document.querySelectorAll(".quiz details")],open=!all.every(d=>d.open);
+ all.forEach(d=>d.open=open);e.target.textContent=open?"정답 모두 숨기기":"정답 모두 보기";
+});
+renderTable();render();
+</script>
+</body>
+</html>
